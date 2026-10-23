@@ -15,7 +15,8 @@ import {
   Send,
   PhoneCall,
   Sparkles,
-  Info
+  Info,
+  Activity
 } from 'lucide-react';
 
 export default function PatientView({
@@ -24,7 +25,7 @@ export default function PatientView({
   onOpenWhatsAppSim,
   onRefreshData
 }) {
-  const [activeTab, setActiveTab] = useState('beranda'); // 'beranda', 'obat', 'pesan', 'chat', 'profil'
+  const [activeTab, setActiveTab] = useState('beranda'); // 'beranda', 'obat', 'pesan', 'chat', 'riwayat', 'profil'
   const [adherenceData, setAdherenceData] = useState(null);
   const [articles, setArticles] = useState([]);
   const [selectedCat, setSelectedCat] = useState('Semua');
@@ -102,8 +103,8 @@ export default function PatientView({
       if (data.success) {
         // Trigger celebratory confetti effect
         confetti({
-          particleCount: 80,
-          spread: 70,
+          particleCount: 90,
+          spread: 75,
           origin: { y: 0.6 }
         });
         setAlreadyTakenToday(true);
@@ -140,7 +141,6 @@ export default function PatientView({
       const data = await res.json();
       if (data.success) {
         loadConsultations();
-        // Check back after 2s for auto response
         setTimeout(loadConsultations, 2000);
       }
     } catch (err) {
@@ -153,108 +153,132 @@ export default function PatientView({
   const progressPercent = Math.min(100, Math.round((currentDay / totalDays) * 100));
 
   return (
-    <div className="patient-view-wrapper">
-      {/* Tab: BERANDA */}
-      {activeTab === 'beranda' && (
-        <>
-          {/* Header Sapaan Personal */}
-          <div className="patient-header-greeting">
-            <div className="greeting-text-subtitle">Program TB DOTS • Puskesmas Mekar Jaya</div>
-            <h1 className="greeting-text-title">
-              Halo, {patient?.name?.split(' ')[0] || 'Dika'}! Jangan lupa minum obat hari ini ya!
+    <div className="patient-web-dashboard">
+      {/* Header Sapaan Personal Banner */}
+      <div className="patient-header-greeting" style={{ borderRadius: 20, marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div className="greeting-text-subtitle">Program TB DOTS 180 Hari • Puskesmas Mekar Jaya</div>
+            <h1 className="greeting-text-title" style={{ fontSize: 24, margin: '4px 0 6px' }}>
+              Halo, {patient?.name || 'Dika Pratama'}! Jangan lupa minum obat hari ini ya!
             </h1>
-            <div className="greeting-puskesmas-tag">
-              <Sparkles size={12} color="#fbbf24" /> Pengawas Obat: {patient?.pmo_name || 'Ibu Ratna'}
-            </div>
-          </div>
-
-          {/* Kartu Progres Pengobatan TB */}
-          <div className="treatment-progress-card">
-            <div className="progress-header-row">
-              <span className="progress-label-title">Progres Pengobatan TB</span>
-              <span className="phase-pill-badge">Fase {patient?.phase || 'Intensif'}</span>
-            </div>
-
-            <div className="days-counter-big">
-              Hari ke-{currentDay} <span>dari {totalDays}</span>
-            </div>
-
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
-            </div>
-
-            <div className="progress-footer-stats">
-              <span>Obat diminum {currentDay}/{totalDays} hari</span>
-              <span>{progressPercent}% Selesai</span>
-            </div>
-          </div>
-
-          {/* Grid 4 Menu Utama */}
-          <div className="patient-menu-grid">
-            <div
-              className="menu-action-card"
-              onClick={() => setActiveTab('obat')}
-            >
-              <div className="menu-icon-wrapper icon-blue">
-                <Clock size={22} />
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
+              <div className="greeting-puskesmas-tag">
+                <Sparkles size={13} color="#fbbf24" /> Pengawas Menelan Obat: <strong>{patient?.pmo_name || 'Ibu Ratna'}</strong>
               </div>
-              <div>
-                <div className="menu-card-title">Pengingat Obat</div>
-                <div className="menu-card-desc">Lihat jadwal & catat konsumsi obat</div>
-              </div>
-            </div>
-
-            <div
-              className="menu-action-card"
-              onClick={() => setActiveTab('pesan')}
-            >
-              <div className="menu-icon-wrapper icon-teal">
-                <BookOpen size={22} />
-              </div>
-              <div>
-                <div className="menu-card-title">Pesan & Edukasi</div>
-                <div className="menu-card-desc">Informasi seputar TB & gizi sehat</div>
-              </div>
-            </div>
-
-            <div
-              className="menu-action-card"
-              onClick={() => setActiveTab('riwayat')}
-            >
-              <div className="menu-icon-wrapper icon-emerald">
-                <Calendar size={22} />
-              </div>
-              <div>
-                <div className="menu-card-title">Riwayat Minum Obat</div>
-                <div className="menu-card-desc">Lihat catatan harian kepatuhan</div>
-              </div>
-            </div>
-
-            <div
-              className="menu-action-card"
-              onClick={() => setActiveTab('chat')}
-            >
-              <div className="menu-icon-wrapper icon-amber">
-                <MessageCircle size={22} />
-              </div>
-              <div>
-                <div className="menu-card-title">Kontak Petugas</div>
-                <div className="menu-card-desc">Hubungi jika ada keluhan atau mual</div>
+              <div className="greeting-puskesmas-tag">
+                <Clock size={13} /> Jadwal Harian: <strong>{patient?.schedule_time || '08:00'} WIB</strong>
               </div>
             </div>
           </div>
 
-          {/* Quick Reminder Card Preview */}
-          <div style={{ padding: '0 16px 20px' }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={() => onOpenWhatsAppSim && onOpenWhatsAppSim()}
+              style={{
+                background: '#25d366',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 24,
+                padding: '10px 18px',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)'
+              }}
+            >
+              <MessageCircle size={16} /> Buka Bot WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Web Tab Navigation Bar */}
+      <div className="patient-web-tabs-bar">
+        <button
+          className={`web-tab-item ${activeTab === 'beranda' ? 'active' : ''}`}
+          onClick={() => setActiveTab('beranda')}
+        >
+          <Home size={16} /> Beranda Pasien
+        </button>
+
+        <button
+          className={`web-tab-item ${activeTab === 'obat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('obat')}
+        >
+          <Pill size={16} /> Pengingat & Jadwal Obat
+        </button>
+
+        <button
+          className={`web-tab-item ${activeTab === 'pesan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pesan')}
+        >
+          <BookOpen size={16} /> Pesan & Edukasi TB
+        </button>
+
+        <button
+          className={`web-tab-item ${activeTab === 'riwayat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('riwayat')}
+        >
+          <Calendar size={16} /> Riwayat Minum Obat
+        </button>
+
+        <button
+          className={`web-tab-item ${activeTab === 'chat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('chat')}
+        >
+          <MessageCircle size={16} /> Kontak & Konsultasi Perawat
+        </button>
+
+        <button
+          className={`web-tab-item ${activeTab === 'profil' ? 'active' : ''}`}
+          onClick={() => setActiveTab('profil')}
+        >
+          <User size={16} /> Profil Pasien
+        </button>
+      </div>
+
+      {/* TAB 1: BERANDA */}
+      {activeTab === 'beranda' && (
+        <div className="patient-home-grid">
+          {/* Left Column: Progress Card & Action Box */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Kartu Progres Pengobatan TB */}
+            <div className="treatment-progress-card" style={{ margin: 0 }}>
+              <div className="progress-header-row">
+                <span className="progress-label-title">Progres Pengobatan TB DOTS</span>
+                <span className="phase-pill-badge">Fase {patient?.phase || 'Intensif (2 Bulan)'}</span>
+              </div>
+
+              <div className="days-counter-big" style={{ fontSize: 28, margin: '8px 0' }}>
+                Hari ke-{currentDay} <span>dari {totalDays} Hari</span>
+              </div>
+
+              <div className="progress-track" style={{ height: 14 }}>
+                <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+              </div>
+
+              <div className="progress-footer-stats" style={{ marginTop: 8 }}>
+                <span>Obat diminum {currentDay}/{totalDays} hari</span>
+                <span style={{ color: '#0284c7', fontWeight: 800 }}>{progressPercent}% Selesai</span>
+              </div>
+            </div>
+
+            {/* Schedule Clock Action Card */}
             <div className="schedule-clock-card" style={{ margin: 0 }}>
               <div className="clock-icon-pill">
-                <Pill size={28} />
+                <Pill size={32} />
               </div>
               <div className="clock-time-display">
                 {patient?.schedule_time || '08:00'} Pagi
               </div>
               <div className="clock-time-sub">
-                Dosis: {patient?.dosage_info || '3 Tablet FDC Kategori 1'}
+                Resep: <strong>{patient?.medication_type || 'FDC Kat 1 (RHZE)'}</strong>
+                <br />
+                {patient?.dosage_info || '3 Tablet FDC diminum 1 kali sehari'}
               </div>
 
               <button
@@ -264,7 +288,7 @@ export default function PatientView({
               >
                 {alreadyTakenToday ? (
                   <>
-                    <CheckCircle2 size={20} /> Sudah Minum Hari Ini (08:02 WIB)
+                    <CheckCircle2 size={20} /> Sudah Minum Hari Ini (Tepat Waktu)
                   </>
                 ) : (
                   <>
@@ -278,118 +302,218 @@ export default function PatientView({
                   className="schedule-sublink"
                   onClick={() => setActiveTab('obat')}
                 >
-                  Lihat detail jadwal & riwayat &rarr;
+                  Lihat detail jadwal lengkap &riwayat &rarr;
                 </span>
               </div>
             </div>
           </div>
-        </>
-      )}
 
-      {/* Tab: OBAT (Halaman Pengingat Obat) */}
-      {activeTab === 'obat' && (
-        <div style={{ paddingBottom: 20 }}>
-          {/* Banner Pengingat */}
-          <div className="reminder-banner">
-            <div className="reminder-banner-icon">
-              <Bell size={20} />
-            </div>
-            <div>
-              <div className="reminder-banner-title">Jangan lupa minum obat!</div>
-              <div className="reminder-banner-desc">
-                Obat TB harus diminum secara teratur setiap hari sampai selesai pengobatan (180 hari) untuk mencegah kuman kebal obat.
+          {/* Right Column: 4 Menu Utama Grid & Riwayat Hari Ini */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Grid 4 Menu Utama */}
+            <div className="patient-menu-grid" style={{ padding: 0, margin: 0 }}>
+              <div
+                className="menu-action-card"
+                onClick={() => setActiveTab('obat')}
+              >
+                <div className="menu-icon-wrapper icon-blue">
+                  <Clock size={24} />
+                </div>
+                <div>
+                  <div className="menu-card-title">Pengingat Obat</div>
+                  <div className="menu-card-desc">Lihat jadwal & catat konsumsi obat</div>
+                </div>
+              </div>
+
+              <div
+                className="menu-action-card"
+                onClick={() => setActiveTab('pesan')}
+              >
+                <div className="menu-icon-wrapper icon-teal">
+                  <BookOpen size={24} />
+                </div>
+                <div>
+                  <div className="menu-card-title">Pesan & Edukasi</div>
+                  <div className="menu-card-desc">Informasi seputar TB & gizi sehat</div>
+                </div>
+              </div>
+
+              <div
+                className="menu-action-card"
+                onClick={() => setActiveTab('riwayat')}
+              >
+                <div className="menu-icon-wrapper icon-emerald">
+                  <Calendar size={24} />
+                </div>
+                <div>
+                  <div className="menu-card-title">Riwayat Minum Obat</div>
+                  <div className="menu-card-desc">Lihat catatan harian kepatuhan</div>
+                </div>
+              </div>
+
+              <div
+                className="menu-action-card"
+                onClick={() => setActiveTab('chat')}
+              >
+                <div className="menu-icon-wrapper icon-amber">
+                  <MessageCircle size={24} />
+                </div>
+                <div>
+                  <div className="menu-card-title">Kontak Petugas</div>
+                  <div className="menu-card-desc">Hubungi jika ada keluhan atau mual</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Penunjuk Jam Jadwal Minum Obat */}
-          <div className="schedule-clock-card">
-            <div className="clock-icon-pill">
-              <Pill size={32} />
-            </div>
-            <div className="clock-time-display">
-              {patient?.schedule_time || '08:00'} Pagi
-            </div>
-            <div className="clock-time-sub">
-              Obat: <strong>{patient?.medication_type || 'FDC Kat 1 (RHZE)'}</strong>
-              <br />
-              {patient?.dosage_info || '3 Tablet FDC diminum 1 kali sehari sebelum makan'}
-            </div>
+            {/* Riwayat Hari Ini Card */}
+            <div className="today-history-card" style={{ margin: 0 }}>
+              <div className="history-card-title">
+                <Clock size={16} color="#0284c7" /> Riwayat Hari Ini
+              </div>
 
-            <button
-              className={`btn-taken-action ${alreadyTakenToday ? 'already-taken' : ''}`}
-              onClick={handleConfirmTaken}
-              disabled={alreadyTakenToday || takenLoading}
-            >
               {alreadyTakenToday ? (
-                <>
-                  <CheckCircle2 size={20} /> Sudah Minum Hari Ini
-                </>
-              ) : (
-                <>
-                  <Pill size={20} /> {takenLoading ? 'Menyimpan...' : 'Sudah Minum'}
-                </>
-              )}
-            </button>
-
-            <div>
-              <span
-                className="schedule-sublink"
-                onClick={() => onOpenWhatsAppSim && onOpenWhatsAppSim()}
-              >
-                📲 Buka Konfirmasi via WhatsApp Bot &rarr;
-              </span>
-            </div>
-          </div>
-
-          {/* Riwayat Hari Ini */}
-          <div className="today-history-card">
-            <div className="history-card-title">
-              <Clock size={16} color="#0284c7" /> Riwayat Hari Ini
-            </div>
-
-            {alreadyTakenToday ? (
-              <div className="history-item-row">
-                <div className="history-item-left">
-                  <CheckCircle2 size={18} color="#10b981" />
-                  <div>
-                    <div className="history-item-title">
-                      {patient?.schedule_time || '08:00'} Obat diminum
-                    </div>
-                    <div className="history-item-method">
-                      Konfirmasi via WhatsApp Bot / Tombol Aplikasi
+                <div className="history-item-row">
+                  <div className="history-item-left">
+                    <CheckCircle2 size={20} color="#10b981" />
+                    <div>
+                      <div className="history-item-title">
+                        {patient?.schedule_time || '08:00'} Obat diminum
+                      </div>
+                      <div className="history-item-method">
+                        Tercatat via WhatsApp Bot & Tombol Aplikasi
+                      </div>
                     </div>
                   </div>
+                  <div className="history-item-badge">Patuh</div>
                 </div>
-                <div className="history-item-badge">Patuh</div>
-              </div>
-            ) : (
-              <div style={{
-                padding: '14px',
-                textAlign: 'center',
-                color: '#64748b',
-                background: '#f8fafc',
-                borderRadius: 8,
-                fontSize: 13
-              }}>
-                <AlertCircle size={20} color="#f59e0b" style={{ margin: '0 auto 6px' }} />
-                Belum ada konfirmasi minum obat hari ini.
-                <br />
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                  Tekan tombol "Sudah Minum" di atas setelah obat ditelan.
-                </span>
-              </div>
-            )}
+              ) : (
+                <div style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  background: '#f8fafc',
+                  borderRadius: 10,
+                  fontSize: 13
+                }}>
+                  <AlertCircle size={22} color="#f59e0b" style={{ margin: '0 auto 6px' }} />
+                  Belum ada konfirmasi minum obat hari ini.
+                  <br />
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                    Silakan minum obat sesuai jadwal dan tekan tombol "Sudah Minum".
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Tab: PESAN & EDUKASI */}
+      {/* TAB 2: OBAT (Halaman Pengingat Obat) */}
+      {activeTab === 'obat' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Banner Pengingat */}
+          <div className="reminder-banner" style={{ margin: 0 }}>
+            <div className="reminder-banner-icon">
+              <Bell size={22} />
+            </div>
+            <div>
+              <div className="reminder-banner-title" style={{ fontSize: 16 }}>Jangan lupa minum obat!</div>
+              <div className="reminder-banner-desc" style={{ fontSize: 13 }}>
+                Obat TB harus diminum secara teratur setiap hari sampai selesai pengobatan (180 hari) agar kuman TB tidak resisten (kebal obat/MDR).
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+            {/* Penunjuk Jam Jadwal Minum Obat */}
+            <div className="schedule-clock-card" style={{ margin: 0 }}>
+              <div className="clock-icon-pill">
+                <Pill size={36} />
+              </div>
+              <div className="clock-time-display">
+                {patient?.schedule_time || '08:00'} Pagi
+              </div>
+              <div className="clock-time-sub">
+                Obat: <strong>{patient?.medication_type || 'FDC Kat 1 (RHZE)'}</strong>
+                <br />
+                {patient?.dosage_info || '3 Tablet FDC diminum 1 kali sehari sebelum makan'}
+              </div>
+
+              <button
+                className={`btn-taken-action ${alreadyTakenToday ? 'already-taken' : ''}`}
+                onClick={handleConfirmTaken}
+                disabled={alreadyTakenToday || takenLoading}
+              >
+                {alreadyTakenToday ? (
+                  <>
+                    <CheckCircle2 size={20} /> Sudah Minum Hari Ini
+                  </>
+                ) : (
+                  <>
+                    <Pill size={20} /> {takenLoading ? 'Menyimpan...' : 'Sudah Minum'}
+                  </>
+                )}
+              </button>
+
+              <div style={{ marginTop: 14 }}>
+                <span
+                  className="schedule-sublink"
+                  onClick={() => onOpenWhatsAppSim && onOpenWhatsAppSim()}
+                >
+                  📲 Buka Konfirmasi via WhatsApp Bot &rarr;
+                </span>
+              </div>
+            </div>
+
+            {/* Riwayat Hari Ini */}
+            <div className="today-history-card" style={{ margin: 0 }}>
+              <div className="history-card-title">
+                <Clock size={18} color="#0284c7" /> Riwayat Hari Ini
+              </div>
+
+              {alreadyTakenToday ? (
+                <div className="history-item-row">
+                  <div className="history-item-left">
+                    <CheckCircle2 size={20} color="#10b981" />
+                    <div>
+                      <div className="history-item-title">
+                        {patient?.schedule_time || '08:00'} Obat diminum
+                      </div>
+                      <div className="history-item-method">
+                        Konfirmasi via WhatsApp Bot / Tombol Aplikasi
+                      </div>
+                    </div>
+                  </div>
+                  <div className="history-item-badge">Patuh</div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '24px',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  background: '#f8fafc',
+                  borderRadius: 10,
+                  fontSize: 13
+                }}>
+                  <AlertCircle size={24} color="#f59e0b" style={{ margin: '0 auto 8px' }} />
+                  Belum ada konfirmasi minum obat hari ini.
+                  <br />
+                  <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                    Tekan tombol "Sudah Minum" di samping setelah obat ditelan.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: PESAN & EDUKASI */}
       {activeTab === 'pesan' && (
-        <div className="education-container">
-          <div style={{ marginBottom: 14 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>Pesan & Edukasi TB</h2>
-            <p style={{ fontSize: 12, color: '#64748b' }}>Informasi medis resmi untuk mempercepat kesembuhan Anda</p>
+        <div className="education-container" style={{ padding: 0 }}>
+          <div style={{ marginBottom: 18 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Pesan & Edukasi Pasien TB</h2>
+            <p style={{ fontSize: 13, color: '#64748b' }}>Informasi medis resmi Puskesmas Mekar Jaya untuk mendukung pemulihan tuntas</p>
           </div>
 
           {/* Filter Kategori Berbentuk Pill Tabs */}
@@ -405,8 +529,8 @@ export default function PatientView({
             ))}
           </div>
 
-          {/* Daftar Artikel Edukasi */}
-          <div className="article-list-stack">
+          {/* Daftar Artikel Edukasi Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             {articles.map((art) => (
               <div
                 key={art.id}
@@ -428,10 +552,10 @@ export default function PatientView({
         </div>
       )}
 
-      {/* Tab: CHAT / KONSULTASI */}
+      {/* TAB 4: CHAT / KONSULTASI */}
       {activeTab === 'chat' && (
-        <div style={{ padding: 16 }}>
-          <div className="chat-window-container">
+        <div>
+          <div className="chat-window-container" style={{ height: 640 }}>
             <div className="chat-header-bar">
               <div className="chat-contact-info">
                 <img
@@ -440,7 +564,7 @@ export default function PatientView({
                   className="chat-avatar"
                 />
                 <div>
-                  <div className="chat-name">Bu Sari, S.Kep (Perawat TB)</div>
+                  <div className="chat-name">Bu Sari, S.Kep (Perawat Koordinator TB)</div>
                   <div className="chat-status-indicator">
                     <span className="chat-status-dot" /> Online • Puskesmas Mekar Jaya
                   </div>
@@ -452,8 +576,8 @@ export default function PatientView({
                   background: '#f0f9ff',
                   border: '1px solid #bae6fd',
                   borderRadius: '50%',
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -461,7 +585,7 @@ export default function PatientView({
                   cursor: 'pointer'
                 }}
               >
-                <PhoneCall size={16} />
+                <PhoneCall size={18} />
               </button>
             </div>
 
@@ -471,7 +595,7 @@ export default function PatientView({
                 fontSize: 11,
                 color: '#94a3b8',
                 background: '#ffffff',
-                padding: '4px 12px',
+                padding: '4px 14px',
                 borderRadius: 20,
                 alignSelf: 'center',
                 margin: '4px 0'
@@ -516,17 +640,12 @@ export default function PatientView({
         </div>
       )}
 
-      {/* Tab: RIWAYAT MINUM OBAT */}
+      {/* TAB 5: RIWAYAT MINUM OBAT */}
       {activeTab === 'riwayat' && (
-        <div style={{ padding: 16 }}>
-          <div style={{ marginBottom: 14 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>Riwayat Minum Obat</h2>
-            <p style={{ fontSize: 12, color: '#64748b' }}>Catatan harian kepatuhan konsumsi obat TB 180 hari</p>
-          </div>
-
-          <div className="weekly-calendar-card">
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
-              Kalender Minggu Ini
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="weekly-calendar-card" style={{ margin: 0 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+              Kalender Pemantauan Minggu Ini (Senin – Minggu)
             </h3>
             <div className="weekly-calendar-grid">
               {(adherenceData?.weeklyData || []).map((day, idx) => {
@@ -541,7 +660,7 @@ export default function PatientView({
                 }
                 return (
                   <div key={idx} className={`calendar-day-col ${day.isToday ? 'today' : ''}`}>
-                    <span className="cal-day-name">{day.dayName.slice(0, 3)}</span>
+                    <span className="cal-day-name">{day.dayName}</span>
                     <span className="cal-day-num">{day.dayNum}</span>
                     <div className={`cal-status-icon-box ${statusClass}`}>
                       {icon}
@@ -553,15 +672,15 @@ export default function PatientView({
           </div>
 
           <div className="patient-data-table-card">
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: 14 }}>
-              Catatan 14 Hari Terakhir
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 800, fontSize: 15 }}>
+              Riwayat Kepatuhan Harian
             </div>
-            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 400, overflowY: 'auto' }}>
               {(adherenceData?.allLogs || []).map((log) => (
                 <div
                   key={log.id}
                   style={{
-                    padding: '12px 16px',
+                    padding: '14px 20px',
                     borderBottom: '1px solid #f1f5f9',
                     display: 'flex',
                     alignItems: 'center',
@@ -595,94 +714,57 @@ export default function PatientView({
         </div>
       )}
 
-      {/* Tab: PROFIL */}
+      {/* TAB 6: PROFIL */}
       {activeTab === 'profil' && (
-        <div style={{ padding: 16 }}>
-          <div className="pmo-patient-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-              <div className="patient-avatar-circle" style={{ width: 56, height: 56, fontSize: 20 }}>
-                {patient?.name?.charAt(0) || 'D'}
+        <div className="pmo-patient-card" style={{ margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+            <div className="patient-avatar-circle" style={{ width: 64, height: 64, fontSize: 24 }}>
+              {patient?.name?.charAt(0) || 'D'}
+            </div>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>
+                {patient?.name || 'Dika Pratama'}
+              </h2>
+              <div style={{ fontSize: 13, color: '#64748b' }}>
+                NIK: {patient?.nik || '3201123456780001'} • {patient?.age || 24} Tahun
               </div>
-              <div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
-                  {patient?.name || 'Dika Pratama'}
-                </h2>
-                <div style={{ fontSize: 12, color: '#64748b' }}>
-                  NIK: {patient?.nik || '3201123456780001'} • {patient?.age || 24} Tahun
-                </div>
-                <div style={{ fontSize: 12, color: '#0284c7', fontWeight: 600 }}>
-                  Fasilitas: Puskesmas Mekar Jaya (Kecamatan Mekar Jaya)
-                </div>
+              <div style={{ fontSize: 12, color: '#0284c7', fontWeight: 700, marginTop: 2 }}>
+                Puskesmas Mekar Jaya • Program DOTS TB Nasional
               </div>
             </div>
+          </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10 }}>
-                <div style={{ color: '#94a3b8', fontSize: 11 }}>No. WhatsApp Pasien</div>
-                <div style={{ fontWeight: 700 }}>{patient?.phone_number || '+62 812-3456-7890'}</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10 }}>
-                <div style={{ color: '#94a3b8', fontSize: 11 }}>Pengawas Obat (PMO)</div>
-                <div style={{ fontWeight: 700 }}>{patient?.pmo_name || 'Ibu Ratna'} ({patient?.pmo_relation || 'Ibu'})</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10 }}>
-                <div style={{ color: '#94a3b8', fontSize: 11 }}>Mulai Pengobatan</div>
-                <div style={{ fontWeight: 700 }}>{patient?.start_date || '2026-10-12'}</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10 }}>
-                <div style={{ color: '#94a3b8', fontSize: 11 }}>Jadwal Minum Harian</div>
-                <div style={{ fontWeight: 700, color: '#0284c7' }}>{patient?.schedule_time || '08:00'} WIB</div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, fontSize: 13 }}>
+            <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700 }}>No. WhatsApp Pasien</div>
+              <div style={{ fontWeight: 800, marginTop: 4 }}>{patient?.phone_number || '+62 812-3456-7890'}</div>
             </div>
+            <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700 }}>Pengawas Obat (PMO)</div>
+              <div style={{ fontWeight: 800, marginTop: 4 }}>{patient?.pmo_name || 'Ibu Ratna'} ({patient?.pmo_relation || 'Ibu'})</div>
+            </div>
+            <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700 }}>Mulai Pengobatan</div>
+              <div style={{ fontWeight: 800, marginTop: 4 }}>{patient?.start_date || '2026-10-12'}</div>
+            </div>
+            <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700 }}>Jadwal Minum Harian</div>
+              <div style={{ fontWeight: 800, color: '#0284c7', marginTop: 4 }}>{patient?.schedule_time || '08:00'} WIB</div>
+            </div>
+          </div>
 
-            <div style={{ marginTop: 16, background: '#f0f9ff', padding: 14, borderRadius: 10, border: '1px solid #bae6fd' }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#0369a1', marginBottom: 4 }}>
-                Panduan Pengobatan DOTS 6 Bulan:
-              </div>
-              <div style={{ fontSize: 12, color: '#334155', lineHeight: 1.5 }}>
-                • Jangan menghentikan konsumsi obat meskipun badan sudah merasa baikan.<br />
-                • Simpan obat di tempat kering terhindar dari sinar matahari langsung.<br />
-                • Hubungi Bu Sari jika terdapat keluhan gatal berat atau mata kuning.
-              </div>
+          <div style={{ marginTop: 20, background: '#f0f9ff', padding: 16, borderRadius: 12, border: '1px solid #bae6fd' }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#0369a1', marginBottom: 6 }}>
+              Panduan Penting Pengobatan TB DOTS:
+            </div>
+            <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.6 }}>
+              • Jangan pernah menghentikan konsumsi obat meskipun batuk dan gejala sudah hilang.<br />
+              • Pengobatan harus tuntas minimal 6 bulan (180 hari) agar kuman TB musnah sempurna.<br />
+              • Hubungi petugas kami jika mengalami reaksi alergi berat atau mata berwarna kekuningan.
             </div>
           </div>
         </div>
       )}
-
-      {/* Bottom Navigation Bar */}
-      <div className="patient-bottom-nav">
-        <button
-          className={`bottom-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
-          onClick={() => setActiveTab('beranda')}
-        >
-          <Home size={18} />
-          <span>Beranda</span>
-        </button>
-
-        <button
-          className={`bottom-nav-item ${activeTab === 'obat' ? 'active' : ''}`}
-          onClick={() => setActiveTab('obat')}
-        >
-          <Pill size={18} />
-          <span>Obat</span>
-        </button>
-
-        <button
-          className={`bottom-nav-item ${activeTab === 'pesan' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pesan')}
-        >
-          <BookOpen size={18} />
-          <span>Pesan</span>
-        </button>
-
-        <button
-          className={`bottom-nav-item ${activeTab === 'profil' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profil')}
-        >
-          <User size={18} />
-          <span>Profil</span>
-        </button>
-      </div>
     </div>
   );
 }

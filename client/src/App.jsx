@@ -4,14 +4,9 @@ import {
   Activity,
   Users,
   ShieldCheck,
-  Smartphone,
-  Monitor,
   MessageSquare,
   Sparkles,
-  Info,
-  Wifi,
-  Battery,
-  Signal
+  Info
 } from 'lucide-react';
 
 import OnboardingModal from './components/OnboardingModal';
@@ -25,7 +20,6 @@ import AdminView from './components/AdminView';
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState('pasien'); // 'pasien', 'pmo', 'petugas', 'admin'
-  const [viewMode, setViewMode] = useState('mobile'); // 'mobile' | 'desktop'
   const [patient, setPatient] = useState(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isWaSimOpen, setIsWaSimOpen] = useState(false);
@@ -52,12 +46,6 @@ export default function App() {
 
   const handleRoleChange = (role) => {
     setCurrentRole(role);
-    // If switching to Petugas or Admin, default view mode to desktop for optimal dashboard view
-    if (role === 'petugas' || role === 'admin') {
-      setViewMode('desktop');
-    } else {
-      setViewMode('mobile');
-    }
   };
 
   const triggerRefresh = () => {
@@ -75,7 +63,7 @@ export default function App() {
           </div>
           <div>
             <div className="brand-title">TB Monitor & Bot WhatsApp</div>
-            <div className="brand-subtitle">Puskesmas Mekar Jaya • DOTS TB</div>
+            <div className="brand-subtitle">Puskesmas Mekar Jaya • Program DOTS TB 180 Hari</div>
           </div>
         </div>
 
@@ -114,24 +102,8 @@ export default function App() {
           </button>
         </div>
 
-        {/* Right Actions: View Mode Switcher, WhatsApp Launcher & Onboarding */}
+        {/* Right Actions: WhatsApp Launcher & Onboarding Info */}
         <div className="topbar-right-actions">
-          {/* View Mode Toggle: Smartphone vs Desktop */}
-          <div className="view-mode-toggle" title="Ubah tampilan ukuran">
-            <button
-              className={`view-mode-btn ${viewMode === 'mobile' ? 'active' : ''}`}
-              onClick={() => setViewMode('mobile')}
-            >
-              <Smartphone size={14} /> Mobile
-            </button>
-            <button
-              className={`view-mode-btn ${viewMode === 'desktop' ? 'active' : ''}`}
-              onClick={() => setViewMode('desktop')}
-            >
-              <Monitor size={14} /> Desktop
-            </button>
-          </div>
-
           {/* Onboarding Dialog Button */}
           <button
             onClick={() => setIsOnboardingOpen(true)}
@@ -140,16 +112,17 @@ export default function App() {
               border: '1px solid #bae6fd',
               color: '#0284c7',
               borderRadius: 20,
-              padding: '6px 12px',
+              padding: '7px 14px',
               fontSize: 12,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              cursor: 'pointer'
+              gap: 6,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
           >
-            <Info size={14} /> Info / Masuk
+            <Info size={14} /> Panduan / Masuk
           </button>
 
           {/* WhatsApp Bot Simulator Trigger Button */}
@@ -164,107 +137,42 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Viewport */}
+      {/* Main Web Viewport */}
       <main className="app-viewport-wrapper">
-        {viewMode === 'mobile' ? (
-          /* Smartphone Frame Simulator Container */
-          <div className="mobile-frame-container">
-            {/* Top Phone Speaker / Notch */}
-            <div className="phone-speaker-notch">
-              <div className="phone-camera-dot" />
-            </div>
+        <div className="web-app-container">
+          {currentRole === 'pasien' && (
+            <PatientView
+              patient={patient}
+              onOpenArticle={(art) => setActiveArticle(art)}
+              onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
+              onRefreshData={triggerRefresh}
+            />
+          )}
 
-            {/* Simulated Phone Status Bar */}
-            <div className="phone-status-bar">
-              <span>08:00</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Signal size={12} />
-                <Wifi size={12} />
-                <Battery size={13} />
-              </div>
-            </div>
+          {currentRole === 'pmo' && (
+            <PmoView
+              patient={patient}
+              onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
+              onRefreshData={triggerRefresh}
+            />
+          )}
 
-            {/* Inner Content based on active role */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-              {currentRole === 'pasien' && (
-                <PatientView
-                  patient={patient}
-                  onOpenArticle={(art) => setActiveArticle(art)}
-                  onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-                  onRefreshData={triggerRefresh}
-                />
-              )}
+          {currentRole === 'petugas' && (
+            <OfficerView
+              onOpenNewPatient={() => setIsNewPatientModalOpen(true)}
+              onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
+              onSelectPatient={(p) => {
+                setPatient(p);
+                setCurrentRole('pasien');
+              }}
+              onRefreshTrigger={refreshTrigger}
+            />
+          )}
 
-              {currentRole === 'pmo' && (
-                <PmoView
-                  patient={patient}
-                  onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-                  onRefreshData={triggerRefresh}
-                />
-              )}
-
-              {currentRole === 'petugas' && (
-                <div style={{ padding: 14 }}>
-                  <OfficerView
-                    onOpenNewPatient={() => setIsNewPatientModalOpen(true)}
-                    onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-                    onSelectPatient={(p) => {
-                      setPatient(p);
-                      setCurrentRole('pasien');
-                    }}
-                    onRefreshTrigger={refreshTrigger}
-                  />
-                </div>
-              )}
-
-              {currentRole === 'admin' && (
-                <div style={{ padding: 14 }}>
-                  <AdminView />
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Full Desktop / Wide Layout Container */
-          <div className="desktop-view-container">
-            {currentRole === 'pasien' && (
-              <div style={{ maxWidth: 650, margin: '0 auto', background: '#ffffff', borderRadius: 24, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-                <PatientView
-                  patient={patient}
-                  onOpenArticle={(art) => setActiveArticle(art)}
-                  onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-                  onRefreshData={triggerRefresh}
-                />
-              </div>
-            )}
-
-            {currentRole === 'pmo' && (
-              <div style={{ maxWidth: 850, margin: '0 auto' }}>
-                <PmoView
-                  patient={patient}
-                  onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-                  onRefreshData={triggerRefresh}
-                />
-              </div>
-            )}
-
-            {currentRole === 'petugas' && (
-              <OfficerView
-                onOpenNewPatient={() => setIsNewPatientModalOpen(true)}
-                onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-                onSelectPatient={(p) => {
-                  setPatient(p);
-                  setCurrentRole('pasien');
-                }}
-                onRefreshTrigger={refreshTrigger}
-              />
-            )}
-
-            {currentRole === 'admin' && (
-              <AdminView />
-            )}
-          </div>
-        )}
+          {currentRole === 'admin' && (
+            <AdminView />
+          )}
+        </div>
       </main>
 
       {/* WhatsApp Bot Interactive Floating Simulator */}

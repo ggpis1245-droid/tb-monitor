@@ -243,58 +243,70 @@ body {
   background: linear-gradient(180deg, #f0f7ff 0%, #f8fafc 100%);
 }
 
-/* Mobile Frame Simulator (When mobile mode is selected) */
-.mobile-frame-container {
-  width: 100%;
-  max-width: 420px;
-  background: #ffffff;
-  border-radius: 40px;
-  box-shadow: 0 25px 60px -15px rgba(2, 132, 199, 0.2), 0 0 0 10px #1e293b, 0 0 0 12px #94a3b8;
-  overflow: hidden;
-  position: relative;
-  min-height: 840px;
-  display: flex;
-  flex-direction: column;
-}
-
-.phone-speaker-notch {
-  width: 140px;
-  height: 22px;
-  background: #1e293b;
-  border-bottom-left-radius: 14px;
-  border-bottom-right-radius: 14px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 50;
-}
-
-.phone-camera-dot {
-  width: 9px;
-  height: 9px;
-  background: #0f172a;
-  border-radius: 50%;
-  border: 1px solid #334155;
-}
-
-.phone-status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 20px 2px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-main);
-  background: transparent;
-}
-
-/* Desktop View Wrapper */
-.desktop-view-container {
+/* Web Application Container (Direct Responsive Web Layout) */
+.web-app-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Patient Web Navigation Tabs Bar */
+.patient-web-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-light);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-xs);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.patient-web-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.web-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition-fast);
+}
+
+.web-tab-item:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.web-tab-item.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+/* 2-Column Responsive Web Grid for Patient Home */
+.patient-home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 860px) {
+  .patient-home-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ==========================================
