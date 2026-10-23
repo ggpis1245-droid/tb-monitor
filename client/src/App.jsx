@@ -1,209 +1,378 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Stethoscope,
-  Activity,
-  Users,
-  ShieldCheck,
+  Home,
+  Pill,
   MessageSquare,
-  Sparkles,
-  Info
+  User,
+  Users,
+  BarChart3
 } from 'lucide-react';
 
-import OnboardingModal from './components/OnboardingModal';
-import WhatsAppSimulator from './components/WhatsAppSimulator';
-import ArticleModal from './components/ArticleModal';
-import NewPatientModal from './components/NewPatientModal';
-import PatientView from './components/PatientView';
-import PmoView from './components/PmoView';
-import OfficerView from './components/OfficerView';
-import AdminView from './components/AdminView';
+import './tbMobileApp.css';
+
+// 9 Screens Components
+import Screen1_Onboarding from './components/mobile/Screen1_Onboarding';
+import Screen2_RoleLogin from './components/mobile/Screen2_RoleLogin';
+import Screen3_PatientDashboard from './components/mobile/Screen3_PatientDashboard';
+import Screen4_MedicineReminder from './components/mobile/Screen4_MedicineReminder';
+import Screen5_Education from './components/mobile/Screen5_Education';
+import Screen6_ChatOfficer from './components/mobile/Screen6_ChatOfficer';
+import Screen7_ComplianceTracking from './components/mobile/Screen7_ComplianceTracking';
+import Screen8_OfficerDashboard from './components/mobile/Screen8_OfficerDashboard';
+import Screen9_AdminDashboard from './components/mobile/Screen9_AdminDashboard';
+import PmoMobileDashboard from './components/mobile/PmoMobileDashboard';
+
+import { getSimpusState, saveSimpusState, logoutCurrentUser } from './services/puskesmasState';
 
 export default function App() {
-  const [currentRole, setCurrentRole] = useState('pasien'); // 'pasien', 'pmo', 'petugas', 'admin'
-  const [patient, setPatient] = useState(null);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [isWaSimOpen, setIsWaSimOpen] = useState(false);
-  const [activeArticle, setActiveArticle] = useState(null);
-  const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [simpusState, setSimpusState] = useState(getSimpusState());
 
-  // Fetch initial patient data (Dika Pratama - Patient ID 1)
-  const fetchPatientData = async () => {
-    try {
-      const res = await fetch('/api/patients/1');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setPatient(data.data);
-      }
-    } catch (err) {
-      console.error('Failed to load patient data:', err);
-    }
-  };
+  // Screen navigation state
+  // When logged out: 'onboarding' (Screen 1) or 'login' (Screen 2)
+  const [loggedOutScreen, setLoggedOutScreen] = useState('onboarding');
+  const [loginInitialMode, setLoginInitialMode] = useState('select_role');
 
+  // When logged in:
+  // For Pasien: 'beranda' (Screen 3), 'reminder' (Screen 4), 'education' (Screen 5), 'chat' (Screen 6), 'compliance' (Screen 7)
+  // For Petugas: 'beranda' (Screen 8), 'compliance' (Screen 7), 'chat' (Screen 6)
+  // For PMO: 'beranda' (PMO Dashboard), 'compliance' (Screen 7), 'chat' (Screen 6), 'education' (Screen 5)
+  // For Admin: 'beranda' (Screen 9), 'patients' (Screen 8)
+  const [activeScreen, setActiveScreen] = useState('beranda');
+  const [selectedPatientForTracking, setSelectedPatientForTracking] = useState(null);
+
+  // Sync state on change
   useEffect(() => {
-    fetchPatientData();
-  }, [refreshTrigger]);
+    const handleStateChange = () => {
+      setSimpusState(getSimpusState());
+    };
+    window.addEventListener('simpus-state-changed', handleStateChange);
+    return () => window.removeEventListener('simpus-state-changed', handleStateChange);
+  }, []);
 
-  const handleRoleChange = (role) => {
-    setCurrentRole(role);
+  const currentUser = simpusState.activeUser;
+  const currentRole = currentUser?.role || 'pasien';
+
+  // Handle successful login
+  const handleLoginSuccess = (userData) => {
+    const updated = { ...simpusState, activeUser: userData };
+    saveSimpusState(updated);
+    setActiveScreen('beranda');
   };
 
-  const triggerRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  // Handle logout
+  const handleLogout = () => {
+    logoutCurrentUser();
+    setLoggedOutScreen('onboarding');
+    setActiveScreen('beranda');
   };
 
   return (
-    <div className="app-main-layout">
-      {/* Top Application Bar */}
-      <header className="app-topbar">
-        {/* Brand */}
-        <div className="topbar-brand">
-          <div className="brand-icon-wrap">
-            <Stethoscope size={22} />
-          </div>
-          <div>
-            <div className="brand-title">TB Monitor & Bot WhatsApp</div>
-            <div className="brand-subtitle">Puskesmas Mekar Jaya • Program DOTS TB 180 Hari</div>
-          </div>
+    <div className="tb-app-main-wrapper">
+      <div className="tb-app-main-container">
+        {/* Scrollable Screen Content Viewport */}
+        <div className="tb-screen-viewport">
+          {/* =========================================================
+              FLOW 1: USER NOT LOGGED IN
+              ========================================================= */}
+          {!currentUser ? (
+            loggedOutScreen === 'onboarding' ? (
+              /* SCREEN 1: Onboarding with Lungs illustration */
+              <Screen1_Onboarding
+                onNavigateToLogin={() => {
+                  setLoginInitialMode('select_role');
+                  setLoggedOutScreen('login');
+                }}
+                onNavigateToRegister={() => {
+                  setLoginInitialMode('register');
+                  setLoggedOutScreen('login');
+                }}
+              />
+            ) : (
+              /* SCREEN 2: Pilih Role / Login with Password */
+              <Screen2_RoleLogin
+                initialMode={loginInitialMode}
+                onBack={() => setLoggedOutScreen('onboarding')}
+                onLoginSuccess={handleLoginSuccess}
+              />
+            )
+          ) : (
+            /* =========================================================
+               FLOW 2: USER LOGGED IN (ROLE ISOLATED)
+               ========================================================= */
+            <>
+              {/* ----------------- ROLE 1: PASIEN TB ----------------- */}
+              {currentRole === 'pasien' && (
+                <>
+                  {activeScreen === 'beranda' && (
+                    /* SCREEN 3: Dashboard Pasien */
+                    <Screen3_PatientDashboard
+                      currentUser={currentUser}
+                      adherenceDay={12}
+                      totalDays={180}
+                      onOpenReminder={() => setActiveScreen('reminder')}
+                      onOpenEducation={() => setActiveScreen('education')}
+                      onOpenCompliance={() => {
+                        setSelectedPatientForTracking(null);
+                        setActiveScreen('compliance');
+                      }}
+                      onOpenChat={() => setActiveScreen('chat')}
+                      onLogout={handleLogout}
+                    />
+                  )}
+
+                  {activeScreen === 'reminder' && (
+                    /* SCREEN 4: Pengingat Obat (Sesuai Jam dari Dokter) */
+                    <Screen4_MedicineReminder
+                      onBack={() => setActiveScreen('beranda')}
+                      patientId={currentUser?.id || 1}
+                      onAdherenceUpdated={() => {}}
+                    />
+                  )}
+
+                  {activeScreen === 'education' && (
+                    /* SCREEN 5: Pesan & Edukasi TB */
+                    <Screen5_Education />
+                  )}
+
+                  {activeScreen === 'chat' && (
+                    /* SCREEN 6: Chat / Konsultasi Bu Sari & dr. Sarah */
+                    <Screen6_ChatOfficer
+                      onBack={() => setActiveScreen('beranda')}
+                      currentUser={currentUser}
+                    />
+                  )}
+
+                  {activeScreen === 'compliance' && (
+                    /* SCREEN 7: Riwayat Kepatuhan Pasien */
+                    <Screen7_ComplianceTracking
+                      onBack={() => setActiveScreen('beranda')}
+                      currentUser={currentUser}
+                      patientData={null}
+                    />
+                  )}
+                </>
+              )}
+
+              {/* ------------ ROLE 2: KELUARGA / PMO ------------ */}
+              {currentRole === 'pmo' && (
+                <>
+                  {activeScreen === 'beranda' && (
+                    <PmoMobileDashboard
+                      currentUser={currentUser}
+                      onOpenCompliance={() => setActiveScreen('compliance')}
+                      onOpenChat={() => setActiveScreen('chat')}
+                      onOpenEducation={() => setActiveScreen('education')}
+                      onLogout={handleLogout}
+                    />
+                  )}
+
+                  {activeScreen === 'compliance' && (
+                    /* SCREEN 7: Riwayat Kepatuhan */
+                    <Screen7_ComplianceTracking
+                      onBack={() => setActiveScreen('beranda')}
+                      currentUser={currentUser}
+                      patientData={null}
+                    />
+                  )}
+
+                  {activeScreen === 'chat' && (
+                    /* SCREEN 6: Chat Petugas */
+                    <Screen6_ChatOfficer
+                      onBack={() => setActiveScreen('beranda')}
+                      currentUser={currentUser}
+                    />
+                  )}
+
+                  {activeScreen === 'education' && (
+                    /* SCREEN 5: Edukasi TB */
+                    <Screen5_Education />
+                  )}
+                </>
+              )}
+
+              {/* --------- ROLE 3: PETUGAS KESEHATAN (BU SARI) --------- */}
+              {currentRole === 'petugas' && (
+                <>
+                  {activeScreen === 'beranda' && (
+                    /* SCREEN 8: Dashboard Petugas Puskesmas */
+                    <Screen8_OfficerDashboard
+                      currentUser={currentUser}
+                      onSelectPatient={(patient) => {
+                        setSelectedPatientForTracking(patient);
+                        setActiveScreen('compliance');
+                      }}
+                      onOpenChat={() => setActiveScreen('chat')}
+                      onLogout={handleLogout}
+                    />
+                  )}
+
+                  {activeScreen === 'compliance' && (
+                    /* SCREEN 7: Tracking Kepatuhan Pasien Tertentu */
+                    <Screen7_ComplianceTracking
+                      onBack={() => setActiveScreen('beranda')}
+                      currentUser={currentUser}
+                      patientData={selectedPatientForTracking}
+                    />
+                  )}
+
+                  {activeScreen === 'chat' && (
+                    /* SCREEN 6: Chat Konsultasi */
+                    <Screen6_ChatOfficer
+                      onBack={() => setActiveScreen('beranda')}
+                      currentUser={currentUser}
+                    />
+                  )}
+                </>
+              )}
+
+              {/* -------------- ROLE 4: ADMIN PUSKESMAS -------------- */}
+              {currentRole === 'admin' && (
+                <>
+                  {activeScreen === 'beranda' && (
+                    /* SCREEN 9: Tampilan Dashboard Admin Puskesmas (Grafik Kurva) */
+                    <Screen9_AdminDashboard
+                      currentUser={currentUser}
+                      onOpenPatientList={() => setActiveScreen('patients')}
+                      onLogout={handleLogout}
+                    />
+                  )}
+
+                  {activeScreen === 'patients' && (
+                    <Screen8_OfficerDashboard
+                      currentUser={currentUser}
+                      onSelectPatient={(patient) => {
+                        setSelectedPatientForTracking(patient);
+                        setActiveScreen('compliance');
+                      }}
+                      onOpenChat={() => setActiveScreen('chat')}
+                      onLogout={handleLogout}
+                    />
+                  )}
+
+                  {activeScreen === 'compliance' && (
+                    <Screen7_ComplianceTracking
+                      onBack={() => setActiveScreen('patients')}
+                      currentUser={currentUser}
+                      patientData={selectedPatientForTracking}
+                    />
+                  )}
+                </>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Multi-Role Switcher (4 Roles) */}
-        <div className="topbar-center-pills">
-          <button
-            className={`role-pill-btn ${currentRole === 'pasien' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('pasien')}
-          >
-            <Activity size={15} />
-            <span>Pasien TB (Dika)</span>
-          </button>
+        {/* =========================================================
+            BOTTOM NAVIGATION BAR (Shown when logged in)
+            Matching Mockup Screen 3, 5, 8, 9
+            ========================================================= */}
+        {currentUser && (
+          <nav className="tb-bottom-nav">
+            {/* Beranda Tab */}
+            <button
+              className={`tb-nav-item ${activeScreen === 'beranda' ? 'active' : ''}`}
+              onClick={() => setActiveScreen('beranda')}
+            >
+              <Home size={20} />
+              <span>Beranda</span>
+            </button>
 
-          <button
-            className={`role-pill-btn ${currentRole === 'pmo' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('pmo')}
-          >
-            <Users size={15} />
-            <span>Keluarga / PMO</span>
-          </button>
+            {/* Role specific 2nd & 3rd tabs */}
+            {currentRole === 'pasien' && (
+              <>
+                <button
+                  className={`tb-nav-item ${activeScreen === 'reminder' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('reminder')}
+                >
+                  <Pill size={20} />
+                  <span>Obat</span>
+                </button>
 
-          <button
-            className={`role-pill-btn ${currentRole === 'petugas' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('petugas')}
-          >
-            <Stethoscope size={15} />
-            <span>Petugas Kesehatan</span>
-          </button>
+                <button
+                  className={`tb-nav-item ${activeScreen === 'education' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('education')}
+                >
+                  <MessageSquare size={20} />
+                  <span>Pesan</span>
+                </button>
+              </>
+            )}
 
-          <button
-            className={`role-pill-btn ${currentRole === 'admin' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('admin')}
-          >
-            <ShieldCheck size={15} />
-            <span>Admin Puskesmas</span>
-          </button>
-        </div>
+            {currentRole === 'petugas' && (
+              <>
+                <button
+                  className={`tb-nav-item ${activeScreen === 'compliance' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedPatientForTracking(null);
+                    setActiveScreen('compliance');
+                  }}
+                >
+                  <Users size={20} />
+                  <span>Pasien</span>
+                </button>
 
-        {/* Right Actions: WhatsApp Launcher & Onboarding Info */}
-        <div className="topbar-right-actions">
-          {/* Onboarding Dialog Button */}
-          <button
-            onClick={() => setIsOnboardingOpen(true)}
-            style={{
-              background: '#f0f9ff',
-              border: '1px solid #bae6fd',
-              color: '#0284c7',
-              borderRadius: 20,
-              padding: '7px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Info size={14} /> Panduan / Masuk
-          </button>
+                <button
+                  className={`tb-nav-item ${activeScreen === 'chat' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('chat')}
+                >
+                  <MessageSquare size={20} />
+                  <span>Chat</span>
+                </button>
+              </>
+            )}
 
-          {/* WhatsApp Bot Simulator Trigger Button */}
-          <button
-            className="wa-simulator-launcher-btn"
-            onClick={() => setIsWaSimOpen(!isWaSimOpen)}
-            title="Buka Simulator Balasan WhatsApp Pasien"
-          >
-            <MessageSquare size={16} />
-            <span>📱 Bot WhatsApp</span>
-          </button>
-        </div>
-      </header>
+            {currentRole === 'pmo' && (
+              <>
+                <button
+                  className={`tb-nav-item ${activeScreen === 'compliance' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('compliance')}
+                >
+                  <Users size={20} />
+                  <span>Dampingan</span>
+                </button>
 
-      {/* Main Web Viewport */}
-      <main className="app-viewport-wrapper">
-        <div className="web-app-container">
-          {currentRole === 'pasien' && (
-            <PatientView
-              patient={patient}
-              onOpenArticle={(art) => setActiveArticle(art)}
-              onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-              onRefreshData={triggerRefresh}
-            />
-          )}
+                <button
+                  className={`tb-nav-item ${activeScreen === 'chat' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('chat')}
+                >
+                  <MessageSquare size={20} />
+                  <span>Chat Nakes</span>
+                </button>
+              </>
+            )}
 
-          {currentRole === 'pmo' && (
-            <PmoView
-              patient={patient}
-              onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-              onRefreshData={triggerRefresh}
-            />
-          )}
+            {currentRole === 'admin' && (
+              <>
+                <button
+                  className={`tb-nav-item ${activeScreen === 'patients' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('patients')}
+                >
+                  <Users size={20} />
+                  <span>Pasien</span>
+                </button>
 
-          {currentRole === 'petugas' && (
-            <OfficerView
-              onOpenNewPatient={() => setIsNewPatientModalOpen(true)}
-              onOpenWhatsAppSim={() => setIsWaSimOpen(true)}
-              onSelectPatient={(p) => {
-                setPatient(p);
-                setCurrentRole('pasien');
-              }}
-              onRefreshTrigger={refreshTrigger}
-            />
-          )}
+                <button
+                  className={`tb-nav-item ${activeScreen === 'beranda' ? 'active' : ''}`}
+                  onClick={() => setActiveScreen('beranda')}
+                >
+                  <BarChart3 size={20} />
+                  <span>Laporan</span>
+                </button>
+              </>
+            )}
 
-          {currentRole === 'admin' && (
-            <AdminView />
-          )}
-        </div>
-      </main>
-
-      {/* WhatsApp Bot Interactive Floating Simulator */}
-      <WhatsAppSimulator
-        isOpen={isWaSimOpen}
-        onClose={() => setIsWaSimOpen(false)}
-        currentPatientId={patient?.id || 1}
-        onAdherenceUpdated={triggerRefresh}
-      />
-
-      {/* Onboarding & Medical Lungs Modal */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        onSelectRole={handleRoleChange}
-      />
-
-      {/* Educational Article Reader Modal */}
-      <ArticleModal
-        article={activeArticle}
-        onClose={() => setActiveArticle(null)}
-      />
-
-      {/* New Patient Registration Form Modal */}
-      <NewPatientModal
-        isOpen={isNewPatientModalOpen}
-        onClose={() => setIsNewPatientModalOpen(false)}
-        onPatientCreated={() => {
-          triggerRefresh();
-        }}
-      />
+            {/* Profil / Logout Tab */}
+            <button
+              className="tb-nav-item"
+              onClick={handleLogout}
+              title="Keluar / Ganti Akun"
+            >
+              <User size={20} />
+              <span>Profil</span>
+            </button>
+          </nav>
+        )}
+      </div>
     </div>
   );
 }

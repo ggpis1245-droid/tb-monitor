@@ -1,353 +1,620 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import {
   Users,
   CheckCircle2,
-  XCircle,
-  Clock,
-  Calendar,
   AlertCircle,
-  FileText,
+  Calendar,
+  Clock,
+  Phone,
+  AlertTriangle,
   Send,
-  MessageSquare,
+  Pill,
+  Activity,
+  HeartPulse,
   Sparkles,
   ChevronRight,
   ShieldCheck,
-  UserCheck
+  MessageSquare,
+  FileText
 } from 'lucide-react';
+import {
+  getSimpusState,
+  logPmoDailyCompliance,
+  submitPmoAdverseReport
+} from '../services/puskesmasState';
 
-export default function PmoView({ patient, onOpenWhatsAppSim, onRefreshData }) {
-  const [adherenceData, setAdherenceData] = useState(null);
-  const [newNote, setNewNote] = useState('');
-  const [notesList, setNotesList] = useState([
-    {
-      id: 1,
-      author: 'Bu Sari (Perawat TB Puskesmas)',
-      date: '21 Okt 2026, 09:24',
-      text: 'Pasien sempat mual ringan. Sudah diedukasi untuk minum obat dengan air hangat setelah biskuit. Urine merah wajar karena Rifampisin.'
-    },
-    {
-      id: 2,
-      author: 'Ibu Ratna (PMO)',
-      date: '19 Okt 2026, 08:10',
-      text: 'Dika minum obat tepat waktu setelah sarapan pisang. Nafsu makan mulai membaik.'
-    }
-  ]);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [nudgeSuccess, setNudgeSuccess] = useState(false);
+export default function PmoView({ onOpenWhatsAppSim }) {
+  const [activeTab, setActiveTab] = useState('daftar_pasien'); // 'daftar_pasien', 'checklist_harian', 'lapor_kendala'
+  const [simpusState, setSimpusState] = useState(getSimpusState());
 
-  const patientId = patient?.id || 1;
+  // Checklist Form State
+  const [checklistPatientId, setChecklistPatientId] = useState(1);
+  const [complianceStatus, setComplianceStatus] = useState('minum'); // 'minum', 'belum', 'mangkir'
+  const [takenTime, setTakenTime] = useState('08:00');
+  const [checklistNotes, setChecklistNotes] = useState('Pasien minum obat tepat waktu didampingi langsung. Nafsu makan baik.');
 
-  const loadAdherence = async () => {
-    try {
-      const res = await fetch(`/api/patients/${patientId}/adherence`);
-      const data = await res.json();
-      if (data.success) {
-        setAdherenceData(data.data);
-      }
-    } catch (err) {
-      console.error('Error fetching adherence for PMO:', err);
-    }
+  // Adverse Report Form State
+  const [adversePatientId, setAdversePatientId] = useState(1);
+  const [adverseCategory, setAdverseCategory] = useState('Efek Samping Sedang: Mual Berulang & Ruam Kulit');
+  const [adverseSeverity, setAdverseSeverity] = useState('sedang'); // 'rendah', 'sedang', 'darurat'
+  const [adverseDescription, setAdverseDescription] = useState('');
+
+  // Toast feedback
+  const [toastMessage, setToastMessage] = useState('');
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
   };
 
   useEffect(() => {
-    loadAdherence();
-  }, [patientId]);
-
-  const handleAddNote = (e) => {
-    e.preventDefault();
-    if (!newNote.trim()) return;
-    const item = {
-      id: Date.now(),
-      author: 'Ibu Ratna (PMO)',
-      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
-      text: newNote
+    const handleStateChange = () => {
+      setSimpusState(getSimpusState());
     };
-    setNotesList([item, ...notesList]);
-    setNewNote('');
-  };
+    window.addEventListener('simpus-state-changed', handleStateChange);
+    return () => window.removeEventListener('simpus-state-changed', handleStateChange);
+  }, []);
 
-  const handleSendNudge = async () => {
-    try {
-      await fetch('/api/whatsapp/send-reminder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientId,
-          customMessage: `❤️ *Pesan dari PMO (Ibu Ratna):*\n\n"Halo Dika, jangan lupa minum obat TB hari ini ya nak. Ibu sudah siapkan air putih hangat di meja. Tetap semangat, kita tuntaskan sampai sembuh total!"`
-        })
-      });
-      setNudgeSuccess(true);
-      setTimeout(() => setNudgeSuccess(false), 4000);
-      if (onRefreshData) onRefreshData();
-    } catch (err) {
-      console.error('Failed to send PMO reminder:', err);
+  const patientsList = simpusState.pmoPatients || [];
+
+  // Metrics
+  const totalMonitored = patientsList.length;
+  const sudahMinumHariIni = patientsList.filter(
+    (p) => p.todayStatus === 'sudah_minum'
+  ).length;
+  const belumMinumHariIni = patientsList.filter(
+    (p) => p.todayStatus === 'belum_minum'
+  ).length;
+  const mangkirHariIni = patientsList.filter(
+    (p) => p.todayStatus === 'mangkir'
+  ).length;
+  const averageAdherence = totalMonitored > 0
+    ? Math.round(patientsList.reduce((acc, curr) => acc + curr.adherenceScore, 0) / totalMonitored)
+    : 0;
+
+  // Handle Checklist Submit
+  const handleChecklistSubmit = (e) => {
+    e.preventDefault();
+    const targetPatient = patientsList.find((p) => p.id === Number(checklistPatientId));
+
+    logPmoDailyCompliance({
+      patientId: Number(checklistPatientId),
+      status: complianceStatus,
+      takenTime: `${takenTime} WIB`,
+      notes: checklistNotes
+    });
+
+    if (complianceStatus === 'minum') {
+      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      triggerToast(`Berhasil mencatat kepatuhan: ${targetPatient?.name} (STATUS: PATUH MINUM OBAT)`);
+    } else if (complianceStatus === 'mangkir') {
+      triggerToast(`Peringatan: Pasien ${targetPatient?.name} tercatat MANGKIR. Nakes Puskesmas telah dinotifikasi!`);
+    } else {
+      triggerToast(`Status pasien ${targetPatient?.name} diperbarui.`);
     }
+
+    setChecklistNotes('');
   };
 
-  const currentDay = patient?.current_day || 12;
-  const totalDays = patient?.total_days || 180;
-  const progressPercent = Math.min(100, Math.round((currentDay / totalDays) * 100));
+  // Handle Adverse Report Submit
+  const handleAdverseSubmit = (e) => {
+    e.preventDefault();
+    if (!adverseDescription.trim()) {
+      alert('Harap isi deskripsi kendala / efek samping yang dialami pasien.');
+      return;
+    }
+
+    const targetPatient = patientsList.find((p) => p.id === Number(adversePatientId));
+
+    submitPmoAdverseReport({
+      patientId: Number(adversePatientId),
+      patientName: targetPatient?.name || 'Dika Pratama',
+      category: adverseCategory,
+      severity: adverseSeverity,
+      description: adverseDescription
+    });
+
+    triggerToast('🚨 Laporan kendala berhasil dikirim langsung ke Petugas Puskesmas!');
+    setAdverseDescription('');
+    setActiveTab('lapor_kendala');
+  };
 
   return (
-    <div className="pmo-tracking-container">
-      {/* PMO Header Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)',
-        color: '#ffffff',
-        padding: '20px 24px',
-        borderRadius: 20,
-        marginBottom: 20,
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccfbf1', fontWeight: 600 }}>
-          <UserCheck size={16} /> Portal Pengawas Menelan Obat (PMO)
+    <div className="pmo-portal-container">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div className="officer-floating-toast">
+          <CheckCircle2 size={18} />
+          <span>{toastMessage}</span>
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 800, margin: '6px 0 4px' }}>
-          Pemantauan Harian Pasien: {patient?.name || 'Dika Pratama'}
-        </h2>
-        <p style={{ fontSize: 13, color: '#e0f2fe', lineHeight: 1.4 }}>
-          Dampingi dan pastikan pasien meminum obat setiap hari tanpa terputus selama 180 hari pengobatan.
-        </p>
-      </div>
+      )}
 
-      {/* Kartu Profil Pasien beserta Progres Hari Pengobatan */}
-      <div className="pmo-patient-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div className="patient-avatar-circle" style={{ width: 50, height: 50, fontSize: 18 }}>
-              {patient?.name?.charAt(0) || 'D'}
-            </div>
-            <div>
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
-                {patient?.name || 'Dika Pratama'}
-              </h3>
-              <div style={{ fontSize: 12, color: '#64748b' }}>
-                24 Tahun • Laki-laki • Fase {patient?.phase || 'Intensif'}
-              </div>
-              <div style={{ fontSize: 11, color: '#0d9488', fontWeight: 700, marginTop: 2 }}>
-                Status: {patient?.adherence_status === 'patuh' ? '✅ Kepatuhan Sangat Baik' : '⚠️ Perlu Perhatian Khusus'}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              className="btn-outline-med"
-              style={{ padding: '8px 14px', fontSize: 12 }}
-              onClick={() => setShowDetailModal(true)}
-            >
-              Lihat Detail Pasien
-            </button>
-            <button
-              className="btn-primary-med"
-              style={{ padding: '8px 16px', fontSize: 12, background: '#25d366' }}
-              onClick={handleSendNudge}
-            >
-              <Send size={14} /> Ingatkan via WA
-            </button>
-          </div>
-        </div>
-
-        {nudgeSuccess && (
-          <div style={{
-            background: '#ecfdf5',
-            border: '1px solid #a7f3d0',
-            color: '#065f46',
-            padding: '8px 14px',
-            borderRadius: 8,
-            fontSize: 12,
-            fontWeight: 600,
-            marginBottom: 14
-          }}>
-            ✅ Pesan pengingat penuh perhatian dari PMO berhasil dikirim ke WhatsApp {patient?.name}!
-          </div>
-        )}
-
-        {/* Progress Display */}
-        <div style={{ background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
-            <span>Progres Pengobatan TB</span>
-            <span style={{ color: '#0284c7' }}>Hari ke-{currentDay} dari {totalDays}</span>
-          </div>
-
-          <div className="progress-track" style={{ height: 12 }}>
-            <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b', marginTop: 6 }}>
-            <span>Mulai: {patient?.start_date || '2026-10-12'}</span>
-            <span>Target Selesai: 180 Hari Tuntas</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Kalender Pemantauan Mingguan (Senin–Minggu) */}
-      <div className="weekly-calendar-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header Profile PMO */}
+      <section className="pmo-header-banner">
+        <div className="pmo-header-info">
+          <img
+            src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150"
+            alt="Ibu Ratna"
+            className="pmo-head-avatar"
+          />
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-              Kalender Pemantauan Mingguan (Senin – Minggu)
-            </h3>
-            <p style={{ fontSize: 12, color: '#64748b' }}>
-              Status visual harian minum obat minggu berjalan
+            <div className="pmo-head-badge">
+              <ShieldCheck size={13} /> KADER PMO RESMI PUSKESMAS MEKAR JAYA
+            </div>
+            <h1 className="pmo-head-title">Dashboard Pengawas Menelan Obat (PMO)</h1>
+            <p className="pmo-head-sub">
+              Ibu Ratna • Wilayah RW 04 Mekar Jaya • Memantau Pasien Program DOTS Tuberkulosis & Penyakit Kronis
             </p>
           </div>
-          <span style={{
-            background: '#e0f2fe',
-            color: '#0284c7',
-            padding: '4px 10px',
-            borderRadius: 20,
-            fontSize: 11,
-            fontWeight: 700
-          }}>
-            Jadwal: {patient?.schedule_time || '08:00'} WIB
-          </span>
         </div>
 
-        <div className="weekly-calendar-grid">
-          {(adherenceData?.weeklyData || []).map((day, idx) => {
-            let statusIcon = null;
-            let statusClass = 'cal-status-nodata';
+        <div className="pmo-head-adherence-gauge">
+          <div className="pmo-big-gauge-num">{averageAdherence}%</div>
+          <div className="pmo-gauge-lbl">Rata-rata Kepatuhan Binaan</div>
+        </div>
+      </section>
 
-            if (day.status === 'minum') {
-              statusClass = 'cal-status-minum';
-              statusIcon = <CheckCircle2 size={16} />;
-            } else if (day.status === 'belum_minum') {
-              statusClass = 'cal-status-belum';
-              statusIcon = <XCircle size={16} />;
-            } else {
-              statusClass = 'cal-status-nodata';
-              statusIcon = <span style={{ fontSize: 14 }}>—</span>;
-            }
+      {/* Overview Stats Metric Bar */}
+      <section className="pmo-stats-bar-grid">
+        <div className="pmo-stat-box bg-blue-subtle">
+          <div className="pmo-stat-icon">
+            <Users size={22} className="text-primary" />
+          </div>
+          <div>
+            <div className="pmo-stat-val">{totalMonitored} Orang</div>
+            <div className="pmo-stat-desc">Total Pasien Binaan PMO</div>
+          </div>
+        </div>
 
-            return (
-              <div
-                key={idx}
-                className={`calendar-day-col ${day.isToday ? 'today' : ''}`}
-              >
-                <span className="cal-day-name">{day.dayName}</span>
-                <span className="cal-day-num">{day.dayNum}</span>
-                <div className={`cal-status-icon-box ${statusClass}`}>
-                  {statusIcon}
+        <div className="pmo-stat-box bg-emerald-subtle">
+          <div className="pmo-stat-icon">
+            <CheckCircle2 size={22} className="text-emerald" />
+          </div>
+          <div>
+            <div className="pmo-stat-val">{sudahMinumHariIni} Pasien</div>
+            <div className="pmo-stat-desc">Sudah Minum Obat Hari Ini</div>
+          </div>
+        </div>
+
+        <div className="pmo-stat-box bg-amber-subtle">
+          <div className="pmo-stat-icon">
+            <Clock size={22} className="text-amber-500" />
+          </div>
+          <div>
+            <div className="pmo-stat-val">{belumMinumHariIni} Pasien</div>
+            <div className="pmo-stat-desc">Belum Minum / Perlu Diingatkan</div>
+          </div>
+        </div>
+
+        <div className="pmo-stat-box bg-rose-subtle">
+          <div className="pmo-stat-icon">
+            <AlertTriangle size={22} className="text-rose-500" />
+          </div>
+          <div>
+            <div className="pmo-stat-val">{mangkirHariIni} Pasien</div>
+            <div className="pmo-stat-desc">Mangkir / Perlu Kunjungan Rumah</div>
+          </div>
+        </div>
+      </section>
+
+      {/* PMO Navigation Tabs */}
+      <nav className="pmo-subnav-tabs">
+        <button
+          className={`pmo-tab-btn ${activeTab === 'daftar_pasien' ? 'active' : ''}`}
+          onClick={() => setActiveTab('daftar_pasien')}
+        >
+          <Users size={16} />
+          <span>1. Daftar Pasien di Bawah Pengawasan</span>
+        </button>
+
+        <button
+          className={`pmo-tab-btn ${activeTab === 'checklist_harian' ? 'active' : ''}`}
+          onClick={() => setActiveTab('checklist_harian')}
+        >
+          <CheckCircle2 size={16} />
+          <span>2. Checklist / Laporan Harian Minum Obat</span>
+        </button>
+
+        <button
+          className={`pmo-tab-btn ${activeTab === 'lapor_kendala' ? 'active' : ''}`}
+          onClick={() => setActiveTab('lapor_kendala')}
+        >
+          <AlertCircle size={16} />
+          <span>3. Lapor Kendala & Efek Samping ke Dokter</span>
+          {simpusState.adverseReports.length > 0 && (
+            <span className="tab-pill-badge">{simpusState.adverseReports.length}</span>
+          )}
+        </button>
+      </nav>
+
+      {/* ==============================================================
+          TAB 1: DAFTAR PASIEN DI BAWAH PENGAWASAN
+          ============================================================== */}
+      {activeTab === 'daftar_pasien' && (
+        <div className="pmo-tab-content">
+          <div className="section-head-flex">
+            <div>
+              <h2 className="section-main-heading">Daftar Pasien Binaan Aktif</h2>
+              <p className="section-sub-heading">
+                Pantau riwayat kepatuhan 7 hari terakhir, fase pengobatan, serta hubungi pasien bila jadwal minum obat terlewat.
+              </p>
+            </div>
+            <button className="btn-sim-wa-trigger" onClick={onOpenWhatsAppSim}>
+              <MessageSquare size={16} />
+              <span>Buka Simulator Bot WhatsApp</span>
+            </button>
+          </div>
+
+          <div className="pmo-patient-cards-grid">
+            {patientsList.map((p) => {
+              const isTodayDone = p.todayStatus === 'sudah_minum';
+              const isTodayMissed = p.todayStatus === 'mangkir';
+
+              return (
+                <div key={p.id} className="pmo-patient-card">
+                  <div className="pmo-card-top">
+                    <div>
+                      <span className="pmo-card-no-rm">{p.noRm}</span>
+                      <h3 className="pmo-card-name">{p.name}</h3>
+                      <div className="pmo-card-diag">{p.diagnosis}</div>
+                    </div>
+                    <div className="pmo-card-adherence-badge">
+                      <span className="adherence-big-text">{p.adherenceScore}%</span>
+                      <span className="adherence-sub-label">Kepatuhan</span>
+                    </div>
+                  </div>
+
+                  <div className="pmo-phase-progress-box">
+                    <div className="phase-row-label">
+                      <span>{p.phase}</span>
+                      <strong>Hari ke-{p.dayNumber} dari {p.totalDays}</strong>
+                    </div>
+                    <div className="progress-track-custom">
+                      <div
+                        className="progress-fill-custom"
+                        style={{ width: `${Math.round((p.dayNumber / p.totalDays) * 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="pmo-card-details-list">
+                    <div className="detail-line">
+                      <Pill size={14} className="text-primary" />
+                      <span>{p.regimen}</span>
+                    </div>
+                    <div className="detail-line">
+                      <Clock size={14} className="text-amber-500" />
+                      <span>Jadwal Harian: <strong>{p.scheduleTime}</strong></span>
+                    </div>
+                    <div className="detail-line">
+                      <Phone size={14} className="text-emerald" />
+                      <span>{p.phone} ({p.address})</span>
+                    </div>
+                  </div>
+
+                  {/* 7-Day Adherence Dots */}
+                  <div className="pmo-week-dots-section">
+                    <span className="week-dots-title">Status 7 Hari Terakhir:</span>
+                    <div className="week-dots-row">
+                      {p.recentWeek.map((status, idx) => (
+                        <div
+                          key={idx}
+                          className={`week-dot status-${status}`}
+                          title={`Hari H-${6 - idx}: ${status.toUpperCase()}`}
+                        >
+                          {status === 'minum' ? '✓' : status === 'mangkir' ? '✕' : '-'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Action Footer */}
+                  <div className="pmo-card-footer-actions">
+                    <div className="today-badge-col">
+                      {isTodayDone ? (
+                        <span className="today-done-chip">
+                          <CheckCircle2 size={13} /> Hari ini: Sudah Minum ({p.lastTakenTime})
+                        </span>
+                      ) : isTodayMissed ? (
+                        <span className="today-missed-chip">
+                          <AlertTriangle size={13} /> Hari ini: MANGKIR
+                        </span>
+                      ) : (
+                        <span className="today-pending-chip">
+                          <Clock size={13} /> Hari ini: Belum Konfirmasi
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="footer-btn-group">
+                      <button
+                        className="btn-pmo-verify"
+                        onClick={() => {
+                          setChecklistPatientId(p.id);
+                          setActiveTab('checklist_harian');
+                        }}
+                      >
+                        Verifikasi
+                      </button>
+
+                      <button
+                        className="btn-pmo-report-problem"
+                        onClick={() => {
+                          setAdversePatientId(p.id);
+                          setActiveTab('lapor_kendala');
+                        }}
+                        title="Lapor Efek Samping / Kendala"
+                      >
+                        Lapor Kendala
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                {day.isToday && (
-                  <span style={{ fontSize: 9, fontWeight: 700, color: '#0284c7', textTransform: 'uppercase' }}>
-                    Hari Ini
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ==============================================================
+          TAB 2: CHECKLIST & LAPORAN HARIAN STATUS MINUM OBAT
+          ============================================================== */}
+      {activeTab === 'checklist_harian' && (
+        <div className="pmo-tab-content">
+          <div className="section-head-flex">
+            <div>
+              <h2 className="section-main-heading">Checklist & Laporan Harian Pengawasan Minum Obat</h2>
+              <p className="section-sub-heading">
+                Catat konfirmasi pendampingan minum obat secara langsung atau melalui verifikasi keluarga hari ini.
+              </p>
+            </div>
+          </div>
+
+          <div className="pmo-checklist-form-card simpus-card">
+            <form onSubmit={handleChecklistSubmit} className="pmo-form-layout">
+              <div className="form-grid-3">
+                <div className="form-item-wrap">
+                  <label className="form-field-lbl">1. Pilih Pasien Binaan</label>
+                  <select
+                    className="custom-form-ctrl font-bold"
+                    value={checklistPatientId}
+                    onChange={(e) => setChecklistPatientId(e.target.value)}
+                  >
+                    {patientsList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.diagnosis} • {p.phase})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-item-wrap">
+                  <label className="form-field-lbl">2. Tanggal Pengawasan</label>
+                  <input
+                    type="date"
+                    className="custom-form-ctrl"
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+
+                <div className="form-item-wrap">
+                  <label className="form-field-lbl">3. Jam Minum Obat Aktual</label>
+                  <input
+                    type="time"
+                    className="custom-form-ctrl font-bold"
+                    value={takenTime}
+                    onChange={(e) => setTakenTime(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Status Radio Pills */}
+              <div className="form-item-wrap" style={{ marginTop: '16px' }}>
+                <label className="form-field-lbl">4. Status Pengawasan Hari Ini:</label>
+                <div className="status-radio-pills-row">
+                  <label
+                    className={`status-radio-card ${complianceStatus === 'minum' ? 'selected green' : ''}`}
+                    onClick={() => setComplianceStatus('minum')}
+                  >
+                    <input
+                      type="radio"
+                      name="comp_status"
+                      checked={complianceStatus === 'minum'}
+                      onChange={() => setComplianceStatus('minum')}
+                    />
+                    <div>
+                      <div className="radio-card-title">✓ Sudah Minum Obat (Didampingi)</div>
+                      <div className="radio-card-desc">Pasien menelan obat secara lengkap di depan PMO/Keluarga</div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`status-radio-card ${complianceStatus === 'belum' ? 'selected amber' : ''}`}
+                    onClick={() => setComplianceStatus('belum')}
+                  >
+                    <input
+                      type="radio"
+                      name="comp_status"
+                      checked={complianceStatus === 'belum'}
+                      onChange={() => setComplianceStatus('belum')}
+                    />
+                    <div>
+                      <div className="radio-card-title">⏳ Belum Minum / Ditunda Sementara</div>
+                      <div className="radio-card-desc">Pasien berhalangan / menunda karena mual atau aktivitas</div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`status-radio-card ${complianceStatus === 'mangkir' ? 'selected red' : ''}`}
+                    onClick={() => setComplianceStatus('mangkir')}
+                  >
+                    <input
+                      type="radio"
+                      name="comp_status"
+                      checked={complianceStatus === 'mangkir'}
+                      onChange={() => setComplianceStatus('mangkir')}
+                    />
+                    <div>
+                      <div className="radio-card-title">✕ Menolak / Mangkir (Drop-out Risk)</div>
+                      <div className="radio-card-desc">Pasien sengaja menolak minum obat / tidak dapat dihubungi</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="form-item-wrap" style={{ marginTop: '16px' }}>
+                <label className="form-field-lbl">5. Catatan Pemantauan PMO (Kondisi Makan & Efek Samping Ringan):</label>
+                <textarea
+                  rows="3"
+                  className="custom-form-ctrl"
+                  value={checklistNotes}
+                  onChange={(e) => setChecklistNotes(e.target.value)}
+                  placeholder="Contoh: Pasien sempat mengeluh perut agak perih, disarankan minum bersama biskuit. Kencing merah wajar imbas rifampisin..."
+                />
+              </div>
+
+              <div className="pmo-form-submit-row">
+                <button type="submit" className="btn-save-compliance-record">
+                  <CheckCircle2 size={18} />
+                  <span>Simpan Laporan Harian PMO</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==============================================================
+          TAB 3: LAPOR KENDALA & EFEK SAMPING KE DOKTER PUSKESMAS
+          ============================================================== */}
+      {activeTab === 'lapor_kendala' && (
+        <div className="pmo-tab-content">
+          <div className="section-head-flex">
+            <div>
+              <h2 className="section-main-heading">Lapor Kendala & Efek Samping Obat ke Dokter Puskesmas</h2>
+              <p className="section-sub-heading">
+                Kirim pengaduan cepat bila pasien mengalami efek samping berat, alergi, atau menolak minum obat. Laporan langsung muncul di dasbor Petugas Puskesmas.
+              </p>
+            </div>
+          </div>
+
+          <div className="simpus-card" style={{ marginBottom: '24px' }}>
+            <form onSubmit={handleAdverseSubmit} className="pmo-form-layout">
+              <div className="form-grid-3">
+                <div className="form-item-wrap">
+                  <label className="form-field-lbl">1. Pasien yang Mengalami Kendala</label>
+                  <select
+                    className="custom-form-ctrl font-bold"
+                    value={adversePatientId}
+                    onChange={(e) => setAdversePatientId(e.target.value)}
+                  >
+                    {patientsList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.diagnosis})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-item-wrap">
+                  <label className="form-field-lbl">2. Kategori Efek Samping / Kendala</label>
+                  <select
+                    className="custom-form-ctrl font-bold"
+                    value={adverseCategory}
+                    onChange={(e) => setAdverseCategory(e.target.value)}
+                  >
+                    <option value="Efek Samping Sedang: Mual Berulang & Ruam Kulit">
+                      Efek Samping Sedang: Mual Berulang & Ruam Kulit
+                    </option>
+                    <option value="Efek Samping Berat: Mata / Kulit Menguning (Ikterus Hepatitis)">
+                      Efek Samping Berat: Mata / Kulit Menguning (Ikterus / Hepatitis Imbas Obat)
+                    </option>
+                    <option value="Efek Samping Berat: Gatal Hebat Seluruh Tubuh / Alergi">
+                      Efek Samping Berat: Gatal Hebat Seluruh Tubuh / Alergi
+                    </option>
+                    <option value="Efek Samping Berat: Gangguan Pendengaran / Penglihatan">
+                      Efek Samping Berat: Gangguan Pendengaran / Penglihatan
+                    </option>
+                    <option value="Pasien Menolak Minum Obat / Ingin Menghentikan Terapi">
+                      Pasien Menolak Minum Obat / Ingin Menghentikan Terapi
+                    </option>
+                    <option value="Pasien Pindah Alamat / Hilang Kontak">
+                      Pasien Pindah Alamat / Hilang Kontak
+                    </option>
+                  </select>
+                </div>
+
+                <div className="form-item-wrap">
+                  <label className="form-field-lbl">3. Tingkat Urgensi</label>
+                  <select
+                    className="custom-form-ctrl font-bold text-rose-600"
+                    value={adverseSeverity}
+                    onChange={(e) => setAdverseSeverity(e.target.value)}
+                  >
+                    <option value="rendah">Urgensi Rendah (Dapat menunggu kontrol reguler)</option>
+                    <option value="sedang">Urgensi Sedang (Perlu arahan nakes dalam 24 jam)</option>
+                    <option value="darurat">🚨 DARURAT (Perlu rujukan / pemeriksaan segera hari ini)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-item-wrap" style={{ marginTop: '16px' }}>
+                <label className="form-field-lbl">4. Kronologi & Gejala Spesifik yang Dialami Pasien:</label>
+                <textarea
+                  rows="3"
+                  className="custom-form-ctrl"
+                  placeholder="Jelaskan secara rinci sejak kapan gejala muncul, obat yang diminum, apakah ada muntah atau bengkak..."
+                  value={adverseDescription}
+                  onChange={(e) => setAdverseDescription(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="pmo-form-submit-row">
+                <button type="submit" className="btn-send-adverse-report">
+                  <Send size={18} />
+                  <span>Kirim Laporan Darurat ke Dokter Puskesmas</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Feed of Past Reports */}
+          <h3 className="section-sub-title-margin">Riwayat Laporan Kendala & Status Respon Dokter</h3>
+          <div className="pmo-reports-feed-grid">
+            {simpusState.adverseReports.map((rep) => (
+              <div key={rep.id} className={`pmo-report-card severity-${rep.severity}`}>
+                <div className="report-card-top-bar">
+                  <span className={`severity-tag severity-${rep.severity}`}>
+                    URGENSI: {rep.severity.toUpperCase()}
                   </span>
+                  <span className="report-time-stamp">{rep.reportedAt}</span>
+                </div>
+
+                <h4 className="report-headline">{rep.category}</h4>
+                <div className="report-patient-meta">
+                  <span>Pasien: <strong>{rep.patientName}</strong></span>
+                </div>
+                <div className="report-body-text">"{rep.description}"</div>
+
+                {rep.doctorResponse ? (
+                  <div className="doctor-reply-box">
+                    <div className="reply-label">
+                      <CheckCircle2 size={15} /> Arahan Dokter Puskesmas:
+                    </div>
+                    <p className="reply-text">{rep.doctorResponse}</p>
+                  </div>
+                ) : (
+                  <div className="reply-pending-badge">
+                    ⏳ Sedang menunggu tanggapan dokter penanggung jawab...
+                  </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Legend */}
-        <div className="calendar-legend-row">
-          <div className="legend-item">
-            <div className="cal-status-icon-box cal-status-minum" style={{ width: 18, height: 18, fontSize: 10 }}>
-              ✓
-            </div>
-            <span>Centang Hijau: Minum Obat</span>
-          </div>
-
-          <div className="legend-item">
-            <div className="cal-status-icon-box cal-status-belum" style={{ width: 18, height: 18, fontSize: 10 }}>
-              ✕
-            </div>
-            <span>Lingkaran Merah: Belum Minum</span>
-          </div>
-
-          <div className="legend-item">
-            <div className="cal-status-icon-box cal-status-nodata" style={{ width: 18, height: 18, fontSize: 10 }}>
-              —
-            </div>
-            <span>Strip Abu-abu: Tidak Ada Data</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bagian Catatan Medis & Keluhan Pasien */}
-      <div className="medical-notes-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-              Catatan Medis & Perkembangan Pasien
-            </h3>
-            <p style={{ fontSize: 12, color: '#64748b' }}>
-              Merekam keluhan pasien, efek samping obat, dan anjuran petugas kesehatan
-            </p>
-          </div>
-          <FileText size={18} color="#0284c7" />
-        </div>
-
-        {/* Notes List */}
-        <div style={{ marginBottom: 16 }}>
-          {notesList.map((n) => (
-            <div key={n.id} className="notes-entry-box">
-              <div className="notes-author-time">
-                <span>{n.author}</span>
-                <span>{n.date}</span>
-              </div>
-              <div className="notes-body-text">{n.text}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Input New Note */}
-        <form onSubmit={handleAddNote} style={{ display: 'flex', gap: 10 }}>
-          <input
-            type="text"
-            className="chat-text-input"
-            placeholder="Tambah catatan pemantauan harian oleh PMO..."
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-          />
-          <button type="submit" className="btn-primary-med" style={{ padding: '8px 18px', fontSize: 13 }}>
-            Simpan Catatan
-          </button>
-        </form>
-      </div>
-
-      {/* Detail Pasien Modal */}
-      {showDetailModal && (
-        <div className="modal-overlay-backdrop" onClick={() => setShowDetailModal(false)}>
-          <div className="modal-dialog-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-bar">
-              <h3 style={{ fontSize: 16, fontWeight: 800 }}>Detail Lengkap Pasien TB</h3>
-              <button
-                onClick={() => setShowDetailModal(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="modal-body-content">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-                <div><strong>Nama:</strong> {patient?.name || 'Dika Pratama'}</div>
-                <div><strong>NIK:</strong> {patient?.nik || '3201123456780001'}</div>
-                <div><strong>Usia:</strong> {patient?.age || 24} Tahun</div>
-                <div><strong>Jenis Kelamin:</strong> {patient?.gender === 'L' ? 'Laki-Laki' : 'Perempuan'}</div>
-                <div><strong>No WA Pasien:</strong> {patient?.phone_number || '+62 812-3456-7890'}</div>
-                <div><strong>Nama PMO:</strong> {patient?.pmo_name || 'Ibu Ratna'}</div>
-                <div><strong>No WA PMO:</strong> {patient?.pmo_phone || '+62 813-9876-5432'}</div>
-                <div><strong>Hubungan PMO:</strong> {patient?.pmo_relation || 'Ibu Kandung'}</div>
-                <div><strong>Alamat:</strong> {patient?.address || 'Jl. Anggrek No. 14, Mekar Jaya'}</div>
-                <div><strong>Faskes:</strong> {patient?.puskesmas_name || 'Puskesmas Mekar Jaya'}</div>
-                <div><strong>Mulai Pengobatan:</strong> {patient?.start_date || '2026-10-12'}</div>
-                <div><strong>Fase:</strong> {patient?.phase || 'Intensif'}</div>
-              </div>
-
-              <div style={{ marginTop: 16, background: '#f8fafc', padding: 12, borderRadius: 8, fontSize: 13 }}>
-                <strong>Resep & Dosis Obat:</strong>
-                <p style={{ marginTop: 4, color: '#334155' }}>
-                  {patient?.medication_type || 'FDC Kat 1 (RHZE)'} — {patient?.dosage_info || '3 Tablet diminum 1x sehari'}
-                </p>
-              </div>
-            </div>
-            <div className="modal-footer-bar">
-              <button className="btn-primary-med" onClick={() => setShowDetailModal(false)}>
-                Tutup
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       )}

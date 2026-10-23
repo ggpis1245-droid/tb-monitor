@@ -1,0 +1,1775 @@
+/* ==========================================================================
+   TB MONITORING MOBILE APP - EXACT DESIGN SYSTEM FROM USER MOCKUP
+   Matches the 9 screens pixel-for-pixel:
+   1. Login / Registrasi (Onboarding Lungs)
+   2. Pilih Role / Login (4 role cards & strict password)
+   3. Dashboard Pasien (12/180 hari & 4 grid menu)
+   4. Pengingat Obat (08:00 Pagi & Sudah Minum button)
+   5. Pesan & Edukasi (Category pills & article cards)
+   6. Chat / Konsultasi (Bu Sari chat messages)
+   7. Tracking Kepatuhan (7-day strip Sen-Min)
+   8. Dashboard Petugas Puskesmas (4 stat cards & patient list)
+   9. Tampilan Dashboard Admin Puskesmas (4 cards & line chart)
+   ========================================================================== */
+
+:root {
+  --primary-blue: #2563eb;
+  --primary-blue-hover: #1d4ed8;
+  --primary-blue-light: #eff6ff;
+  --primary-blue-border: #bfdbfe;
+
+  --success-green: #10b981;
+  --success-green-hover: #059669;
+  --success-green-light: #f0fdf4;
+  --success-green-border: #bbf7d0;
+
+  --danger-red: #ef4444;
+  --danger-red-light: #fef2f2;
+  --danger-red-border: #fecaca;
+
+  --purple-accent: #8b5cf6;
+  --purple-light: #faf5ff;
+  --purple-border: #e9d5ff;
+
+  --orange-accent: #f97316;
+  --orange-light: #fff7ed;
+  --orange-border: #fed7aa;
+
+  --text-main: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --bg-app: #f8fafc;
+  --bg-card: #ffffff;
+  --border-light: #e2e8f0;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: #f1f5f9;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* -------------------------------------------------------------
+   SINGLE CLEAN RESPONSIVE APPLICATION SHELL
+   ------------------------------------------------------------- */
+.tb-app-main-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background-color: #f1f5f9;
+}
+
+.tb-app-main-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Screen Viewport Wrapper */
+.tb-screen-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  position: relative;
+}
+
+.tb-screen-viewport::-webkit-scrollbar {
+  width: 4px;
+}
+.tb-screen-viewport::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------
+   BOTTOM NAVIGATION BAR (For Screens 3, 5, 8, 9)
+   ------------------------------------------------------------- */
+.tb-bottom-nav {
+  height: 64px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12px 6px;
+  flex-shrink: 0;
+  z-index: 40;
+}
+
+.tb-nav-item {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.tb-nav-item:hover {
+  color: var(--primary-blue);
+}
+
+.tb-nav-item.active {
+  color: var(--primary-blue);
+}
+
+.tb-nav-item.active svg {
+  stroke-width: 2.4;
+}
+
+/* -------------------------------------------------------------
+   TOP APP HEADERS (Back Arrow, Title, Subtitle, Actions)
+   ------------------------------------------------------------- */
+.tb-screen-header {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.tb-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tb-back-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.tb-back-btn:hover {
+  background: #e2e8f0;
+}
+
+.tb-header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.tb-header-right-action {
+  background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  cursor: pointer;
+  position: relative;
+}
+.tb-header-right-action.has-badge::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--danger-red);
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 1: LOGIN / REGISTRASI (ONBOARDING LUNGS)
+   ------------------------------------------------------------- */
+.tb-screen-onboarding {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 36px;
+  text-align: center;
+}
+
+.tb-onboarding-illu-wrap {
+  width: 220px;
+  height: 220px;
+  background: #eff6ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px auto 20px;
+  position: relative;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.1);
+}
+
+.tb-onboarding-img {
+  width: 170px;
+  height: 170px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.tb-illu-cross-badge {
+  position: absolute;
+  bottom: 24px;
+  right: 28px;
+  background: #2563eb;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.tb-onboarding-content {
+  margin: 16px 0 32px;
+}
+
+.tb-onboarding-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.25;
+  margin-bottom: 12px;
+  letter-spacing: -0.4px;
+}
+
+.tb-onboarding-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.tb-onboarding-buttons {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tb-btn-primary {
+  width: 100%;
+  height: 52px;
+  background: var(--primary-blue);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+.tb-btn-primary:hover {
+  background: var(--primary-blue-hover);
+  transform: translateY(-1px);
+}
+
+.tb-btn-outline {
+  width: 100%;
+  height: 52px;
+  background: #ffffff;
+  color: var(--primary-blue);
+  border: 1.5px solid var(--primary-blue);
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.tb-btn-outline:hover {
+  background: #eff6ff;
+}
+
+.tb-onboarding-footer-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 14px;
+}
+.tb-onboarding-footer-text span {
+  color: var(--primary-blue);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 2: PILIH ROLE & LOGIN
+   ------------------------------------------------------------- */
+.tb-screen-roles {
+  padding: 16px 20px 32px;
+  flex: 1;
+}
+
+.tb-roles-headline {
+  margin-bottom: 24px;
+}
+
+.tb-roles-headline h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.tb-roles-headline p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.tb-role-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-role-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 18px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.tb-role-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.tb-role-card.selected {
+  border-color: var(--primary-blue);
+  background: #f8fafc;
+}
+
+.tb-role-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tb-role-icon-box.pasien {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.tb-role-icon-box.pmo {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.tb-role-icon-box.petugas {
+  background: #faf5ff;
+  color: #7c3aed;
+}
+
+.tb-role-icon-box.admin {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.tb-role-info {
+  flex: 1;
+}
+
+.tb-role-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.tb-role-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.tb-role-chevron {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* Modal / Bottom Drawer for Entering Password */
+.tb-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.tb-bottom-drawer {
+  width: 100%;
+  background: #ffffff;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding: 24px 24px 32px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tb-drawer-handle {
+  width: 44px;
+  height: 5px;
+  background: #cbd5e1;
+  border-radius: 9999px;
+  margin: 0 auto 16px;
+}
+
+.tb-drawer-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.tb-drawer-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.tb-alert-error {
+  background: var(--danger-red-light);
+  border: 1px solid var(--danger-red-border);
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  animation: shake 0.35s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%, 75% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+}
+
+.tb-form-group {
+  margin-bottom: 16px;
+}
+
+.tb-form-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.tb-input-field {
+  width: 100%;
+  height: 48px;
+  background: #f8fafc;
+  border: 1.5px solid var(--border-light);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.2s ease;
+}
+.tb-input-field:focus {
+  border-color: var(--primary-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.tb-password-wrap {
+  position: relative;
+}
+
+.tb-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.tb-credential-pill {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 3: DASHBOARD PASIEN
+   ------------------------------------------------------------- */
+.tb-screen-dashboard-pasien {
+  padding: 16px 20px 24px;
+  flex: 1;
+}
+
+.tb-pasien-greeting-header {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tb-pasien-greeting-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  margin-bottom: 3px;
+}
+
+.tb-pasien-greeting-sub {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+/* Big Hero Card: Pengobatan TB (Hari ke-12 dari 180) */
+.tb-hero-progress-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.tb-hero-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tb-hero-card-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.tb-hero-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tb-hero-day-stat {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.tb-progress-track {
+  width: 100%;
+  height: 9px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.tb-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tb-hero-card-footer {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 4 Grid Menu Cards (2x2) */
+.tb-pasien-grid-menu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tb-grid-menu-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.tb-grid-menu-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.tb-grid-menu-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.tb-grid-menu-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.tb-grid-menu-icon.purple {
+  background: #faf5ff;
+  color: #7c3aed;
+}
+.tb-grid-menu-icon.indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+.tb-grid-menu-icon.green {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.tb-grid-menu-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.tb-grid-menu-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 4: PENGINGAT OBAT
+   ------------------------------------------------------------- */
+.tb-screen-reminder {
+  padding: 8px 20px 24px;
+  flex: 1;
+}
+
+.tb-reminder-notice-banner {
+  background: #eff6ff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.tb-notice-bell-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tb-notice-content h4 {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1e40af;
+  margin-bottom: 3px;
+}
+
+.tb-notice-content p {
+  font-size: 12px;
+  color: #1e3a8a;
+  line-height: 1.4;
+}
+
+/* Time & Pill Display */
+.tb-reminder-clock-wrap {
+  text-align: center;
+  margin: 10px 0 28px;
+}
+
+.tb-reminder-clock-time {
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.tb-reminder-clock-period {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+}
+
+.tb-big-pill-circle {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: #eff6ff;
+  border: 2px dashed #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  color: var(--primary-blue);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
+  transition: all 0.3s ease;
+}
+
+.tb-big-pill-circle.already-taken {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #16a34a;
+}
+
+.tb-reminder-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.tb-btn-take-pill {
+  width: 100%;
+  height: 52px;
+  background: var(--primary-blue);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s ease;
+}
+
+.tb-btn-take-pill.taken {
+  background: #16a34a;
+  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3);
+}
+
+.tb-link-other-schedules {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.tb-reminder-today-history {
+  margin-top: 10px;
+}
+
+.tb-section-heading-sm {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}
+
+.tb-history-item-row {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tb-history-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.tb-history-left svg {
+  color: #16a34a;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 5: PESAN & EDUKASI
+   ------------------------------------------------------------- */
+.tb-screen-education {
+  padding: 8px 20px 24px;
+  flex: 1;
+}
+
+.tb-edu-category-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 18px;
+  -webkit-overflow-scrolling: touch;
+}
+.tb-edu-category-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.tb-cat-pill {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 20px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tb-cat-pill.active {
+  background: var(--primary-blue);
+  color: #ffffff;
+}
+
+.tb-article-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tb-article-card-item {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.tb-article-card-item:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+
+.tb-article-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tb-article-icon-wrap.blue { background: #eff6ff; color: #2563eb; }
+.tb-article-icon-wrap.green { background: #f0fdf4; color: #16a34a; }
+.tb-article-icon-wrap.orange { background: #fff7ed; color: #ea580c; }
+.tb-article-icon-wrap.red { background: #fef2f2; color: #dc2626; }
+
+.tb-article-info {
+  flex: 1;
+}
+
+.tb-article-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.tb-article-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+.tb-article-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------
+   SCREEN 6: CHAT / KONSULTASI DENGAN PETUGAS
+   ------------------------------------------------------------- */
+.tb-screen-chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  background: #f8fafc;
+}
+
+.tb-chat-officer-bar {
+  background: #ffffff;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tb-chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tb-chat-officer-info h3 {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.tb-chat-officer-info span {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.tb-chat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-chat-bubble-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 82%;
+}
+
+.tb-chat-bubble-row.officer {
+  align-self: flex-start;
+}
+
+.tb-chat-bubble-row.patient {
+  align-self: flex-end;
+}
+
+.tb-chat-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.tb-chat-bubble.officer {
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-chat-bubble.patient {
+  background: var(--primary-blue);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.tb-chat-time {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+.tb-chat-bubble-row.patient .tb-chat-time {
+  text-align: right;
+}
+
+.tb-chat-input-bar {
+  background: #ffffff;
+  border-top: 1px solid var(--border-light);
+  padding: 10px 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tb-chat-clip-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.tb-chat-input-field {
+  flex: 1;
+  height: 42px;
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  color: var(--text-main);
+  outline: none;
+}
+.tb-chat-input-field:focus {
+  background: #ffffff;
+  border-color: var(--primary-blue);
+}
+
+.tb-chat-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.tb-chat-send-btn:active {
+  transform: scale(0.92);
+}
+
+/* -------------------------------------------------------------
+   SCREEN 7: TRACKING KEPATUHAN
+   ------------------------------------------------------------- */
+.tb-screen-compliance {
+  padding: 8px 20px 24px;
+  flex: 1;
+}
+
+.tb-compliance-patient-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-compliance-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tb-compliance-patient-info h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.tb-compliance-patient-info p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* 7-Day Day Strip (Sen - Min) */
+.tb-week-strip-box {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 18px 12px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-week-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.tb-week-day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tb-week-day-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.tb-week-day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.tb-week-day-status-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.tb-week-day-status-icon.taken {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.tb-week-day-status-icon.missed {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.tb-week-day-status-icon.empty {
+  color: #cbd5e1;
+}
+
+.tb-week-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+.tb-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Catatan Dokter/Petugas Card */
+.tb-notes-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-notes-card h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.tb-notes-date-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  margin-bottom: 4px;
+}
+
+.tb-notes-text {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 8: DASHBOARD PETUGAS PUSKESMAS
+   ------------------------------------------------------------- */
+.tb-screen-officer {
+  padding: 16px 20px 24px;
+  flex: 1;
+}
+
+.tb-officer-greeting-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.tb-officer-greeting-text h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.tb-officer-greeting-text p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 4 Summary Stats Cards (2x2 Grid) */
+.tb-stats-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.tb-stat-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 18px;
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-stat-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tb-stat-icon-box.blue { background: #eff6ff; color: #2563eb; }
+.tb-stat-icon-box.green { background: #f0fdf4; color: #16a34a; }
+.tb-stat-icon-box.red { background: #fef2f2; color: #dc2626; }
+.tb-stat-icon-box.purple { background: #faf5ff; color: #7c3aed; }
+
+.tb-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-stat-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.tb-stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+/* Search Bar & Patient List */
+.tb-search-bar {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.tb-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.tb-search-input {
+  width: 100%;
+  height: 44px;
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 0 14px 0 40px;
+  font-size: 13.5px;
+  color: var(--text-main);
+  outline: none;
+}
+.tb-search-input:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.tb-patient-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-patient-row-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tb-patient-row-card:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-patient-row-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.tb-patient-row-meta {
+  flex: 1;
+}
+
+.tb-patient-row-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.tb-patient-row-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tb-badge-pill-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.tb-badge-pill-status.patuh {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.tb-badge-pill-status.tidak-patuh {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* -------------------------------------------------------------
+   SCREEN 9: TAMPILAN DASHBOARD ADMIN PUSKESMAS
+   ------------------------------------------------------------- */
+.tb-screen-admin {
+  padding: 16px 20px 24px;
+  flex: 1;
+}
+
+.tb-admin-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.tb-admin-header-row h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.tb-period-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* Interactive Line Chart Card */
+.tb-chart-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light);
+  border-radius: 20px;
+  padding: 18px 16px;
+  margin-top: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-chart-header {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 16px;
+}
+
+.tb-svg-chart-container {
+  width: 100%;
+  height: 180px;
+}
+
+/* -------------------------------------------------------------
+   MODAL DIALOGS (Artikel & Detail)
+   ------------------------------------------------------------- */
+.tb-article-modal-body {
+  padding: 20px 24px 32px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.tb-article-modal-body h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.tb-article-modal-body p {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.tb-article-modal-body ul {
+  padding-left: 20px;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .tb-app-main-container {
+    max-width: 100%;
+    box-shadow: none;
+  }
+}
+
+/* -------------------------------------------------------------
+   DOCTOR MEDICINE SCHEDULER & PATIENT WARNING STYLES
+   ------------------------------------------------------------- */
+.tb-doctor-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tb-btn-doc-action {
+  flex: 1;
+  height: 38px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.tb-btn-doc-action:hover {
+  background: #e2e8f0;
+}
+.tb-btn-doc-action.primary {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+.tb-btn-doc-action.primary:hover {
+  background: #dbeafe;
+}
+.tb-btn-doc-action.warning {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #ea580c;
+}
+.tb-btn-doc-action.warning:hover {
+  background: #ffedd5;
+}
+
+/* Frequency and quick time selector */
+.tb-frequency-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tb-frequency-btn {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+.tb-frequency-btn:hover {
+  border-color: #cbd5e1;
+}
+.tb-frequency-btn.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.tb-time-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.tb-time-pill-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tb-time-pill-btn:hover {
+  background: #e2e8f0;
+}
+.tb-time-pill-btn.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Warning Dialog Template Chips */
+.tb-recipient-segmented {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.tb-recipient-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tb-recipient-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.tb-template-chips-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.tb-template-chip {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tb-template-chip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* Patient in-app warning notification banner */
+.tb-urgent-warning-banner {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 1.5px solid #fdba74;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: pulseLight 2s infinite ease-in-out;
+}
+
+@keyframes pulseLight {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.1); }
+}
+
+.tb-urgent-icon-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ea580c;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tb-urgent-text-wrap {
+  flex: 1;
+}
+.tb-urgent-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #9a3412;
+  margin-bottom: 3px;
+}
+.tb-urgent-msg {
+  font-size: 12.5px;
+  color: #c2410c;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+.tb-urgent-btn-reply {
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+
